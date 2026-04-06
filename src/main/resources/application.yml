@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/CarManagementSystem?createIfDatabaseNotExist=true
+    username: root
+    password: 1234
+
+  jpa:
+    ddl-auto: update
+  show_sql: true
