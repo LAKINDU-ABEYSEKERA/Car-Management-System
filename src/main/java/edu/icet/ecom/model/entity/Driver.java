@@ -18,7 +18,8 @@ import java.util.List;
 @Entity
 public class Driver {
     @Id
-    private String driverId;
+    @GeneratedValue(strategy =  GenerationType.IDENTITY)
+    private Long driverId;
     private String name;
     private String licenceNo;
 
