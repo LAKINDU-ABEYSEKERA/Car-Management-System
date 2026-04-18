@@ -1,0 +1,49 @@
+
+
+services:
+  # ==========================================
+  # THE DATABASE SERVICE
+  # ==========================================
+  db:
+    image: mysql:8.4
+    container_name: car-management-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword # Change this in production!
+      MYSQL_DATABASE: carmanagementsystem
+      MYSQL_USER: ecom_user
+      MYSQL_PASSWORD: ecom_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql # This ensures your data isn't deleted if the container stops
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # THE SPRING BOOT API SERVICE
+  # ==========================================
+  app:
+    build: . # Tells Docker to use the Dockerfile in this directory
+    container_name: car-management-api
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy # Wait until MySQL is fully ready before starting Spring Boot
+    environment:
+      # We override the Spring properties here to point to the Docker database
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/carmanagementsystem?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=ecom_user
+      - SPRING_DATASOURCE_PASSWORD=ecom_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate # Let Flyway handle the schema!
+
+volumes:
+  db_data:
+
+networks:
+  default:
+    name: car-management-network
