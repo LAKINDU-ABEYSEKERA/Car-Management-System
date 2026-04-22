@@ -5,14 +5,17 @@ import edu.icet.ecom.model.dto.BookingDTO;
 import edu.icet.ecom.model.entity.Booking;
 import edu.icet.ecom.model.entity.Car;
 import edu.icet.ecom.model.entity.Customer;
+import edu.icet.ecom.model.entity.Driver;
 import edu.icet.ecom.model.entity.Payment;
 import edu.icet.ecom.model.entity.User;
 import edu.icet.ecom.model.enums.BookingStatus;
 import edu.icet.ecom.model.enums.CarStatus;
+import edu.icet.ecom.model.enums.DriverStatus;
 import edu.icet.ecom.model.enums.PaymentStatus;
 import edu.icet.ecom.repository.BookingRepository;
 import edu.icet.ecom.repository.CarRepository;
 import edu.icet.ecom.repository.CustomerRepository;
+import edu.icet.ecom.repository.DriverRepository; // <-- 1. REQUIRED TO FIND DRIVERS
 import edu.icet.ecom.repository.PaymentRepository;
 import edu.icet.ecom.repository.UserRepository;
 import edu.icet.ecom.service.BookingService;
@@ -37,26 +40,24 @@ public class BookingServiceImpl implements BookingService {
     private final CarRepository carRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
-    private final PaymentRepository paymentRepository; // <-- Needed for Auth & Capture!
+    private final PaymentRepository paymentRepository;
+    private final DriverRepository driverRepository; // <-- INJECTED HERE
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public BookingDTO createBooking(BookingDTO request) {
         log.info("Processing new booking request for Car: {}", request.getCarId());
 
-        // 1. ZERO-TRUST IDENTITY EXTRACTION
         String staffEmail = SecurityUtil.getCurrentUserEmail();
         User loggedInStaff = userRepository.findByEmail(staffEmail)
                 .orElseThrow(() -> new BusinessException("CRITICAL: Authenticated staff member not found in DB!"));
 
-        // 2. VALIDATE FOREIGN KEYS & STATE MACHINE
         Long actualCarId = extractId(request.getCarId(), "CAR");
         Long actualCustomerId = extractId(request.getCustomerId(), "C");
 
         Car car = carRepository.findById(actualCarId)
                 .orElseThrow(() -> new BusinessException("Car not found with ID: " + request.getCarId()));
 
-        // STATE MACHINE SECURITY: Prevent double bookings!
         if (car.getStatus() != CarStatus.AVAILABLE) {
             throw new BusinessException("Car is currently " + car.getStatus() + " and cannot be booked.");
         }
@@ -64,7 +65,6 @@ public class BookingServiceImpl implements BookingService {
         Customer customer = customerRepository.findById(actualCustomerId)
                 .orElseThrow(() -> new BusinessException("Customer not found with ID: " + request.getCustomerId()));
 
-        // 3. BUILD AND SAVE THE BOOKING
         Booking booking = new Booking();
         booking.setCar(car);
         booking.setCustomer(customer);
@@ -73,13 +73,31 @@ public class BookingServiceImpl implements BookingService {
         booking.setStartDate(request.getStartDate());
         booking.setEndDate(request.getEndDate());
         booking.setTotalPrice(request.getTotalPrice());
+        booking.setBookingStatus(BookingStatus.PENDING);
         booking.setWithDriver(request.isWithDriver());
-        booking.setBookingStatus(BookingStatus.PENDING); // Status: PENDING until paid!
+
+        // ====================================================================
+        // 2. THE AUTO-DISPATCH ALGORITHM
+        // ====================================================================
+        if (request.isWithDriver()) {
+            log.info("Chauffeur requested. Searching for available driver...");
+
+            // Finds the first driver who isn't already driving someone else
+            Driver availableDriver = driverRepository.findFirstByStatus(DriverStatus.AVAILABLE)
+                    .orElseThrow(() -> new BusinessException("Booking Failed: No drivers are currently available for dispatch."));
+
+            // Sets the Driver ID in the Database!
+            booking.setDriver(availableDriver);
+
+            // Lock the driver so they don't get double-booked
+            availableDriver.setStatus(DriverStatus.ASSIGNED);
+            driverRepository.save(availableDriver);
+
+            log.info("Driver {} automatically dispatched for this booking.", availableDriver.getDriverId());
+        }
 
         Booking savedBooking = bookingRepository.save(booking);
-        log.info("Successfully created booking ID: {} under Staff: {}", savedBooking.getBookingId(), staffEmail);
 
-        // 4. ASYNC EVENT PUBLISHING
         eventPublisher.publishEvent(new edu.icet.ecom.event.BookingCreatedEvent(
                 String.format("B%03d", savedBooking.getBookingId()),
                 customer.getCustomerName(),
@@ -97,9 +115,6 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(actualBookingId)
                 .orElseThrow(() -> new BusinessException("Booking not found with ID: " + bookingId));
 
-        // ====================================================================
-        // 1. STATE MACHINE & PAYMENT VALIDATION
-        // ====================================================================
         if (booking.getBookingStatus() != BookingStatus.CONFIRMED) {
             throw new BusinessException("Cannot return car. Booking is not in CONFIRMED state.");
         }
@@ -111,9 +126,6 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessException("Payment has already been processed or refunded.");
         }
 
-        // ====================================================================
-        // 2. FINANCIAL CAPTURE EXECUTION
-        // ====================================================================
         Double finalCost = payment.getEstimatedAmount() + (lateFees != null ? lateFees : 0.0) + (damageFees != null ? damageFees : 0.0);
         Double maximumAuthorized = payment.getEstimatedAmount() + payment.getSecurityDeposit();
 
@@ -127,29 +139,28 @@ public class BookingServiceImpl implements BookingService {
         payment.setPaymentStatus(PaymentStatus.CAPTURED);
         paymentRepository.save(payment);
 
-        log.info("PAYMENT CAPTURED: Charged ${}. Released the rest back to customer.", finalCost);
-
-        // ====================================================================
-        // 3. COMPLETE THE RENTAL LIFECYCLE
-        // ====================================================================
         booking.setBookingStatus(BookingStatus.COMPLETED);
+
         Car car = booking.getCar();
         car.setStatus(CarStatus.AVAILABLE);
+        carRepository.save(car);
+
+        // ====================================================================
+        // 3. RELEASE THE DRIVER
+        // ====================================================================
+        if (booking.isWithDriver() && booking.getDriver() != null) {
+            Driver driver = booking.getDriver();
+            driver.setStatus(DriverStatus.AVAILABLE);
+            driverRepository.save(driver);
+            log.info("Driver {} released back to the available pool.", driver.getDriverId());
+        }
 
         bookingRepository.save(booking);
-        carRepository.save(car);
 
         log.info("Car return successful. Booking {} is COMPLETED and Car {} is AVAILABLE.", bookingId, car.getCarId());
 
         return mapToDTO(booking);
     }
-
-
-
-
-
-
-
 
     @Override
     @Transactional(readOnly = true)
@@ -170,8 +181,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDTO updateBookingDates(String bookingId, LocalDate newStartDate, LocalDate newEndDate) {
-        log.info("Admin updating dates for Booking: {}", bookingId);
-
         Long actualBookingId = extractId(bookingId, "B");
         Booking booking = bookingRepository.findById(actualBookingId)
                 .orElseThrow(() -> new BusinessException("Booking not found with ID: " + bookingId));
@@ -180,10 +189,9 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessException("Cannot update a booking that is already COMPLETED.");
         }
 
-        // ENTER THE SQL OVERLAP CHECK!
         boolean isOverlapping = bookingRepository.existsOverlappingBooking(
                 booking.getCar().getCarId(),
-                actualBookingId, // Exclude itself from the check!
+                actualBookingId,
                 newStartDate,
                 newEndDate
         );
@@ -192,11 +200,8 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessException("Cannot update: The car is already booked during these new dates.");
         }
 
-        // Apply updates
         booking.setStartDate(newStartDate);
         booking.setEndDate(newEndDate);
-
-        // Note: In a real system, you would recalculate totalPrice and adjust the Payment Hold here!
 
         Booking updatedBooking = bookingRepository.save(booking);
         return mapToDTO(updatedBooking);
@@ -204,42 +209,36 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public void deleteBooking(String bookingId) {
-        log.warn("CRITICAL: Admin hard-deleting Booking: {}", bookingId);
-
         Long actualBookingId = extractId(bookingId, "B");
         Booking booking = bookingRepository.findById(actualBookingId)
                 .orElseThrow(() -> new BusinessException("Booking not found with ID: " + bookingId));
 
-        // Free up the car if the booking wasn't completed yet
         if (booking.getBookingStatus() != BookingStatus.COMPLETED) {
             Car car = booking.getCar();
             car.setStatus(CarStatus.AVAILABLE);
             carRepository.save(car);
+
+            // Release the driver if booking is deleted early
+            if (booking.isWithDriver() && booking.getDriver() != null) {
+                Driver driver = booking.getDriver();
+                driver.setStatus(DriverStatus.AVAILABLE);
+                driverRepository.save(driver);
+            }
         }
 
         bookingRepository.delete(booking);
-        log.info("Booking {} completely wiped from database.", bookingId);
     }
-
-
-
-
-
-
-
-
-
-
-
-    // =========================================================================
-    // PRIVATE HELPER METHODS (Translators)
-    // =========================================================================
 
     private BookingDTO mapToDTO(Booking booking) {
         BookingDTO dto = new BookingDTO();
         dto.setBookingId(String.format("B%03d", booking.getBookingId()));
         dto.setCarId(String.format("CAR%03d", booking.getCar().getCarId()));
         dto.setCustomerId(String.format("C%03d", booking.getCustomer().getCustomerId()));
+
+        // Pass the actual Driver ID back to the Angular frontend
+        if (booking.getDriver() != null) {
+            dto.setDriverId(String.format("D%03d", booking.getDriver().getDriverId()));
+        }
 
         dto.setStartDate(booking.getStartDate());
         dto.setEndDate(booking.getEndDate());

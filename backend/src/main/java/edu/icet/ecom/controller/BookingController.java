@@ -16,6 +16,7 @@ import java.time.LocalDate;
 
 @Slf4j
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("bookings")
 @RequiredArgsConstructor
 public class BookingController {

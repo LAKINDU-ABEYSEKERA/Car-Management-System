@@ -11,4 +11,5 @@ public interface CarService {
 
     // NEW: The paginated fetch method!
     PaginatedResponse<CarDTO> getAllCars(int page, int size);
+    java.util.Map<String, Object> getFleetTelemetry();
 }

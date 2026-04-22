@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // <-- Added for professional logging
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j // <-- Added for logging
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -35,35 +37,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String userEmail;
 
-        // 2. If there is no header, or it doesn't start with "Bearer ", pass it down the chain (it will likely get rejected later)
+        // 2. If there is no header, or it doesn't start with "Bearer ", pass it down the chain
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Extract the token (chop off the first 7 characters: "Bearer ")
+        // 3. Extract the token
         jwt = authHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
 
-        // 4. If we found an email, and the user isn't already logged in...
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // 4. THE FIX: Wrap the parsing in a try-catch to prevent Filter Chain crashes
+        try {
+            userEmail = jwtService.extractUsername(jwt);
 
-            // Fetch the user from the database
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            // If we found an email, and the user isn't already logged in...
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // 5. Ask the JwtService if the token is valid for this user
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+                // Fetch the user from the database
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                // 6. If valid, create an official Security Token and put it in the Security Context
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // Ask the JwtService if the token is valid for this user
+                if (jwtService.isTokenValid(jwt, userDetails)) {
 
-                // This line officially "logs the user in" for this specific request
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // If valid, create an official Security Token and put it in the Security Context
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // This line officially "logs the user in" for this specific request
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // If the token is garbage, malformed, or expired, safely log it and ignore it.
+            // It will pass down the chain as unauthenticated and be cleanly rejected by Spring Security.
+            log.warn("Invalid JWT Token detected in filter chain: {}", e.getMessage());
         }
+
         // Continue the filter chain
         filterChain.doFilter(request, response);
     }

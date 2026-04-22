@@ -1,0 +1,278 @@
+<style>
+    .matrix-grid { perspective: 1500px; }
+    .cyber-card {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+    }
+    .cyber-card:hover {
+        transform: rotateY(12deg) rotateX(-5deg) translateZ(30px) scale(1.05);
+        box-shadow: -20px 20px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(16,185,129,0.3);
+        z-index: 50;
+    }
+    .cyber-card.booked:hover {
+        box-shadow: -20px 20px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(225,29,72,0.3);
+    }
+    
+    @keyframes cyber-scan {
+        0% { top: -10%; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 110%; opacity: 0; }
+    }
+    .animate-cyber-scan {
+        animation: cyber-scan 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+</style>
+
+<div class="space-y-8">
+    
+    <div class="opacity-0 animate-fade-in-up flex items-end justify-between border-b border-slate-800 pb-4" style="animation-delay: 0.1s;">
+        <div>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 tracking-tight">
+                Command Center
+            </h1>
+            <p class="text-slate-400 mt-2 font-light">Live system telemetry and dynamic pricing metrics.</p>
+        </div>
+        <div class="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <div class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></div>
+            <span class="text-emerald-400 text-sm font-semibold tracking-wider">ENGINE RUNNING</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-indigo-500/50 hover:shadow-[0_10px_30px_rgba(99,102,241,0.2)] transition-all duration-300 group" style="animation-delay: 0.2s;">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
+                    <i class="pi pi-car text-xl text-blue-400"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Fleet</span>
+            </div>
+            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().totalFleet }}</h3>
+            <p class="text-emerald-400 text-sm mt-2 flex items-center"><i class="pi pi-arrow-up mr-1 text-xs"></i> 8% from last week</p>
+        </div>
+
+        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-amber-500/50 hover:shadow-[0_10px_30px_rgba(245,158,11,0.2)] transition-all duration-300 group" style="animation-delay: 0.3s;">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 bg-amber-500/10 rounded-xl group-hover:bg-amber-500/20 transition-colors">
+                    <i class="pi pi-stopwatch text-xl text-amber-400"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Active Holds</span>
+            </div>
+            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().activeHolds }}</h3>
+            <p class="text-amber-400 text-sm mt-2">Awaiting payment verification</p>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
+                <div class="bg-gradient-to-r from-amber-500 to-orange-400 h-1.5 rounded-full animate-glow-pulse" [style.width.%]="fleetService.telemetry().utilizationRate"></div>
+            </div>
+        </div>
+
+        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-purple-500/50 hover:shadow-[0_10px_30px_rgba(168,85,247,0.2)] transition-all duration-300 group" style="animation-delay: 0.4s;">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
+                    <i class="pi pi-bolt text-xl text-purple-400"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Fleet Utilization</span>
+            </div>
+            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().utilizationRate }}%</h3>
+            <p class="text-purple-400 text-sm mt-2">Surge active due to high demand</p>
+        </div>
+
+        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-emerald-500/50 hover:shadow-[0_10px_30px_rgba(16,185,129,0.2)] transition-all duration-300 group" style="animation-delay: 0.5s;">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 bg-emerald-500/10 rounded-xl group-hover:bg-emerald-500/20 transition-colors">
+                    <i class="pi pi-wallet text-xl text-emerald-400"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Daily Revenue</span>
+            </div>
+            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().dailyRevenue | currency:'USD':'symbol':'1.0-0' }}</h3>
+            <p class="text-slate-400 text-sm mt-2">Projected to hit $32k by midnight</p>
+        </div>
+
+    </div>
+
+    <div class="mt-10 opacity-0 animate-fade-in-up" style="animation-delay: 0.6s;">
+        <div class="bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+            
+            <div class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+                <h2 class="text-2xl font-bold text-slate-100 flex items-center">
+                    <i class="pi pi-th-large mr-3 text-indigo-400"></i> Live Reservation Matrix
+                </h2>
+                
+                <div class="flex items-center space-x-6">
+                    <button (click)="openAddCarModal()" class="px-4 py-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white border border-indigo-500/50 rounded-lg text-sm font-bold tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:scale-105">
+                        <i class="pi pi-plus mr-2"></i>Register Asset
+                    </button>
+
+                    <span class="flex items-center text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div> Available
+                    </span>
+                    <span class="flex items-center text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                        <div class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div> 10-Min Hold
+                    </span>
+                    <span class="flex items-center text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                        <div class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2 shadow-[0_0_10px_rgba(225,29,72,0.5)]"></div> Locked
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 matrix-grid">
+                
+                @if (fleetService.isLoading()) {
+                    <div class="col-span-full py-12 flex justify-center text-indigo-400">
+                        <i class="pi pi-spin pi-spinner text-4xl"></i>
+                    </div>
+                } @else {
+                    
+                    @for (car of fleetService.vehicles(); track car.carId) {
+                        
+                        <div (click)="handleCarClick(car)" 
+                             class="cyber-card rounded-xl p-6 relative overflow-hidden group cursor-pointer"
+                             [ngClass]="{
+                                 'bg-slate-950/40 border border-emerald-900/40 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]': car.status === 'AVAILABLE',
+                                 'bg-slate-950/80 border border-rose-900/30 opacity-80 hover:border-rose-500/50 hover:shadow-[0_0_30px_rgba(225,29,72,0.2)] booked': car.status === 'BOOKED',
+                                 'bg-slate-950/80 border border-slate-800 opacity-50 cursor-not-allowed': car.status === 'MAINTENANCE'
+                             }">
+                            
+                            <div class="hidden group-hover:block absolute left-0 right-0 h-0.5 bg-white shadow-[0_0_15px_rgba(255,255,255,1)] z-20 animate-cyber-scan"
+                                 [ngClass]="car.status === 'AVAILABLE' ? 'shadow-emerald-400' : 'shadow-rose-400'"></div>
+
+                            @if (car.status === 'AVAILABLE') {
+                                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            }
+
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <span class="text-sm font-bold text-slate-400 tracking-wider">{{ car.carId }}</span>
+                                
+                                @if (car.status === 'AVAILABLE') {
+                                    <div class="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] uppercase font-bold rounded tracking-widest">Ready</div>
+                                } @else {
+                                    <div class="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] uppercase font-bold rounded tracking-widest flex items-center">
+                                        <i class="pi pi-lock text-[8px] mr-1"></i> Secured
+                                    </div>
+                                }
+                            </div>
+                            
+                            <h4 class="text-2xl font-black mb-1 relative z-10 transition-colors duration-300" [ngClass]="car.status === 'AVAILABLE' ? 'text-white group-hover:text-emerald-300' : 'text-slate-500 group-hover:text-rose-300'">
+                                {{ car.brand }} {{ car.model }}
+                            </h4>
+                            <p class="text-sm mb-6 relative z-10 font-medium" [ngClass]="car.status === 'AVAILABLE' ? 'text-slate-500' : 'text-rose-500/60'">
+                                {{ car.fuelType }} | {{ car.seatingCapacity }} Seats
+                            </p>
+                            
+                            <div class="flex justify-between items-end relative z-10">
+                                <span class="text-xl font-mono font-bold" [ngClass]="car.status === 'AVAILABLE' ? 'text-emerald-400' : 'text-slate-600'">
+                                    ${{ car.pricePerDay }}<span class="text-xs font-sans" [ngClass]="car.status === 'AVAILABLE' ? 'text-slate-500' : 'text-slate-600'">/day</span>
+                                </span>
+                                
+                                @if (car.status === 'AVAILABLE') {
+                                    <button class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300 transform group-hover:scale-110 shadow-[0_0_15px_rgba(16,185,129,0)] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                                        <i class="pi pi-arrow-right font-bold"></i>
+                                    </button>
+                                } @else {
+                                    <i class="pi pi-ban text-rose-500/30 text-2xl group-hover:scale-110 transition-transform"></i>
+                                }
+                            </div>
+                        </div>
+
+                    }
+                }
+            </div>
+
+            <div class="mt-8 flex justify-center border-t border-slate-800 pt-6">
+                <p-paginator
+                    (onPageChange)="onPageChange($event)"
+                    [first]="first"
+                    [rows]="rows"
+                    [totalRecords]="fleetService.totalRecords()"
+                    [showCurrentPageReport]="true"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} assets">
+                </p-paginator>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<p-dialog [(visible)]="checkoutModalVisible" [modal]="true" appendTo="body" [style]="{ width: '550px' }" (onHide)="stopTimer()">
+    <ng-template pTemplate="headless">
+        <div class="bg-slate-900 text-slate-200 rounded-2xl border border-slate-700 shadow-[0_30px_60px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col w-full">
+            <div class="p-6 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent"></div>
+                <div class="relative z-10">
+                    <h3 class="text-2xl font-black text-white tracking-tight">{{ selectedCar?.brand }} {{ selectedCar?.model }}</h3>
+                    <p class="text-emerald-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-check-circle mr-1"></i> Available for Dispatch</p>
+                </div>
+                <div class="relative z-10 bg-slate-900 border border-amber-500/30 px-4 py-2 rounded-lg flex items-center shadow-[0_0_15px_rgba(245,158,11,0.15)]" [ngClass]="{'border-rose-500 text-rose-500': holdTimeLeft < 60}">
+                    <i class="pi pi-stopwatch mr-2" [ngClass]="holdTimeLeft < 60 ? 'text-rose-500 animate-ping' : 'text-amber-500 animate-pulse'"></i>
+                    <span class="font-mono font-bold tracking-widest text-lg" [ngClass]="holdTimeLeft < 60 ? 'text-rose-400' : 'text-amber-400'">{{ displayTime }}</span>
+                </div>
+            </div>
+            <form [formGroup]="checkoutForm" class="p-8 space-y-6 bg-[#020617]">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Start Date</label><input type="date" formControlName="startDate" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm [color-scheme:dark]"></div>
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">End Date</label><input type="date" formControlName="endDate" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm [color-scheme:dark]"></div>
+                </div>
+                <label class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                    <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors"><i class="pi pi-user font-bold"></i></div><div><p class="font-bold text-slate-200">Include Chauffeur</p><p class="text-xs text-slate-500">+$50.00 / day</p></div></div>
+                    <input type="checkbox" formControlName="withDriver" class="w-5 h-5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 bg-slate-950 cursor-pointer">
+                </label>
+                <div class="bg-slate-950/50 rounded-xl p-6 border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between text-sm text-slate-400"><span>Duration ({{ daysRequested }} Days)</span><span class="font-mono text-slate-200">${{ (selectedCar?.pricePerDay * daysRequested) | number:'1.2-2' }}</span></div>
+                    @if (checkoutForm.value.withDriver) { <div class="flex items-center justify-between text-sm text-indigo-400 animate-fade-in-up"><span>Chauffeur Fee</span><span class="font-mono">+${{ (DRIVER_FEE_PER_DAY * daysRequested) | number:'1.2-2' }}</span></div> }
+                    <div class="flex items-center justify-between text-sm text-slate-400"><span>Standard Deposit</span><span class="font-mono text-slate-200">${{ SECURITY_DEPOSIT | number:'1.2-2' }}</span></div>
+                    <div class="border-t border-slate-800 pt-4 flex items-center justify-between"><span class="text-sm font-bold text-slate-300 uppercase tracking-widest">Total Authorized</span><span class="text-3xl font-black text-emerald-400 font-mono drop-shadow-[0_0_10px_rgba(52,211,153,0.3)] transition-all">${{ (dynamicTotal + SECURITY_DEPOSIT) | number:'1.2-2' }}</span></div>
+                </div>
+            </form>
+            <div class="p-6 bg-slate-950/80 border-t border-slate-800 flex space-x-4">
+                <button (click)="closeCheckoutModal()" class="flex-1 py-3 px-4 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">Cancel</button>
+                <button (click)="executeTransaction()" [disabled]="isProcessing || checkoutForm.invalid" class="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all font-bold tracking-wide flex justify-center items-center group disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden relative">@if (!isProcessing) { <span class="flex items-center">Authorize Hold <i class="pi pi-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span> } @else { <span class="flex items-center text-emerald-50"><i class="pi pi-spinner animate-spin text-xl mr-2"></i> Encrypting...</span> }</button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="addCarModalVisible" [modal]="true" appendTo="body" [style]="{ width: '600px' }">
+    <ng-template pTemplate="headless">
+        <div class="bg-slate-900 text-slate-200 rounded-2xl border border-slate-700 shadow-[0_30px_60px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col w-full">
+            <div class="p-6 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent"></div>
+                <div class="relative z-10"><h3 class="text-2xl font-black text-white tracking-tight">Register New Asset</h3><p class="text-indigo-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-server mr-1"></i> Add vehicle to global fleet</p></div>
+            </div>
+            <form [formGroup]="carForm" (ngSubmit)="submitNewCar()" class="p-8 space-y-6 bg-[#020617]">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Brand</label><input type="text" formControlName="brand" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600 text-sm" placeholder="e.g. Porsche"></div>
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Model</label><input type="text" formControlName="model" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600 text-sm" placeholder="e.g. 911 GT3"></div>
+                    <div class="space-y-2 col-span-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Base Rate ($/Day)</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span><input type="number" formControlName="pricePerDay" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pl-8 pr-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono text-sm"></div></div>
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Fuel Type</label><select formControlName="fuelType" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm appearance-none"><option value="ELECTRIC">Electric</option><option value="PETROL">Petrol</option><option value="DIESEL">Diesel</option><option value="HYBRID">Hybrid</option></select></div>
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Seats</label><input type="number" formControlName="seatingCapacity" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm"></div>
+                </div>
+                <div class="border-t border-slate-800 pt-6 mt-6 flex space-x-4">
+                    <button type="button" (click)="addCarModalVisible = false" class="flex-1 py-3 px-4 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">Cancel</button>
+                    <button type="submit" [disabled]="isAddingCar" class="flex-1 py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all font-bold tracking-wide flex justify-center items-center group disabled:opacity-70 disabled:cursor-wait">@if (!isAddingCar) { <span>Deploy to Fleet</span> } @else { <i class="pi pi-spinner animate-spin"></i> }</button>
+                </div>
+            </form>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="returnModalVisible" [modal]="true" appendTo="body" [style]="{ width: '500px' }">
+    <ng-template pTemplate="headless">
+        <div class="bg-slate-900 text-slate-200 rounded-2xl border border-slate-700 shadow-[0_30px_60px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col w-full">
+            <div class="p-6 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-rose-500/10 to-transparent"></div>
+                <div class="relative z-10"><h3 class="text-2xl font-black text-white tracking-tight">{{ selectedCar?.brand }} {{ selectedCar?.model }}</h3><p class="text-rose-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-search mr-1"></i> Post-Rental Inspection</p></div>
+            </div>
+            <form [formGroup]="returnForm" class="p-8 space-y-6 bg-[#020617]">
+                <div class="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex items-start space-x-3 mb-6"><i class="pi pi-exclamation-triangle text-amber-500 mt-0.5"></i><p class="text-xs text-amber-400/80 font-medium">Verify asset condition before capturing final payment. Any added penalties will be deducted from the customer's $500.00 security deposit.</p></div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 text-rose-400">Late Fees ($)</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span><input type="number" formControlName="lateFees" class="w-full bg-slate-950/80 border border-rose-900/50 rounded-xl pl-8 pr-4 py-3 text-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all font-mono text-sm"></div></div>
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 text-rose-400">Damage Penalty ($)</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span><input type="number" formControlName="damageFees" class="w-full bg-slate-950/80 border border-rose-900/50 rounded-xl pl-8 pr-4 py-3 text-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all font-mono text-sm"></div></div>
+                </div>
+            </form>
+            <div class="p-6 bg-slate-950/80 border-t border-slate-800 flex space-x-4">
+                <button type="button" (click)="returnModalVisible = false" class="flex-1 py-3 px-4 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">Cancel</button>
+                <button (click)="executeReturn()" [disabled]="isReturning || returnForm.invalid" class="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(225,29,72,0.3)] transition-all font-bold tracking-wide flex justify-center items-center group disabled:opacity-70 disabled:cursor-wait overflow-hidden">@if (!isReturning) { <span class="flex items-center">Capture & Release <i class="pi pi-check-circle ml-2 group-hover:scale-110 transition-transform"></i></span> } @else { <span class="flex items-center text-rose-100"><i class="pi pi-spinner animate-spin text-xl mr-2"></i> Capturing...</span> }</button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>

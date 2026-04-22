@@ -11,10 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/car")
 public class CarController {
 
@@ -54,6 +56,15 @@ public class CarController {
 
         return ResponseEntity.ok(
                 new StandardResponse(HttpStatus.OK.value(), "Cars retrieved successfully", paginatedCars)
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @GetMapping("/telemetry")
+    public ResponseEntity<StandardResponse> getTelemetry() {
+        Map<String, Object> stats = carService.getFleetTelemetry();
+        return ResponseEntity.ok(
+                new StandardResponse(HttpStatus.OK.value(), "Live telemetry retrieved", stats)
         );
     }
 

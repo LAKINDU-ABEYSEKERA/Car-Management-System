@@ -1,0 +1,96 @@
+<div class="space-y-8 animate-fade-in-up">
+    
+    <div class="flex items-end justify-between border-b border-slate-800 pb-4">
+        <div>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 tracking-tight">
+                Global Fleet Ledger
+            </h1>
+            <p class="text-slate-400 mt-2 font-light">Immutable registry of all corporate assets and deployment statuses.</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-lg flex items-center shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+            <i class="pi pi-database text-indigo-400 mr-2"></i>
+            <span class="text-slate-300 font-mono font-bold">{{ fleetService.vehicles().length }} Total Records</span>
+        </div>
+    </div>
+
+    <div class="bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-2 shadow-2xl relative overflow-hidden">
+        
+        @if (fleetService.isLoading()) {
+            <div class="py-20 flex justify-center text-indigo-400">
+                <i class="pi pi-spin pi-spinner text-5xl drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]"></i>
+            </div>
+        } @else {
+            
+            <p-table 
+                [value]="fleetService.vehicles()" 
+                [paginator]="true" 
+                [rows]="8" 
+                [showCurrentPageReport]="true"
+                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} assets"
+                styleClass="p-datatable-dark"
+                [tableStyle]="{ 'min-width': '50rem' }">
+                
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-widest text-xs p-5 border-b border-slate-800">Asset ID</th>
+                        <th class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-widest text-xs p-5 border-b border-slate-800">Make & Model</th>
+                        <th class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-widest text-xs p-5 border-b border-slate-800">Class Type</th>
+                        <th class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-widest text-xs p-5 border-b border-slate-800">Base Rate</th>
+                        <th class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-widest text-xs p-5 border-b border-slate-800 text-right">Status</th>
+                    </tr>
+                </ng-template>
+                
+                <ng-template pTemplate="body" let-car>
+                    <tr class="bg-slate-950/30 hover:bg-indigo-900/30 transition-all duration-300 border-b border-slate-800/50 group cursor-default">
+                        
+                        <td class="p-5">
+                            <span class="font-mono text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded">{{ car.carId }}</span>
+                        </td>
+                        
+                        <td class="p-5">
+                            <span class="text-slate-200 font-black text-lg group-hover:text-indigo-200 transition-colors">{{ car.brand }}</span>
+                            <span class="text-slate-500 ml-2 font-medium">{{ car.model }}</span>
+                        </td>
+                        
+                        <td class="p-5">
+                            <div class="flex items-center text-sm text-slate-400 font-medium">
+                                <i class="pi pi-filter mr-2 text-slate-600 group-hover:text-indigo-400 transition-colors"></i> {{ car.fuelType }}
+                                <span class="mx-3 text-slate-800">|</span>
+                                <i class="pi pi-users mr-2 text-slate-600 group-hover:text-indigo-400 transition-colors"></i> {{ car.seatingCapacity }}
+                            </div>
+                        </td>
+                        
+                        <td class="p-5">
+                            <span class="font-mono font-bold text-emerald-400 text-lg">${{ car.pricePerDay }}<span class="text-xs text-slate-500 font-sans ml-1">/day</span></span>
+                        </td>
+                        
+                        <td class="p-5 text-right">
+                            @if (car.status === 'AVAILABLE') {
+                                <span class="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] uppercase font-bold rounded-full tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.1)]">Available</span>
+                            } @else if (car.status === 'BOOKED') {
+                                <span class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] uppercase font-bold rounded-full tracking-widest shadow-[0_0_10px_rgba(225,29,72,0.1)] inline-flex items-center">
+                                    <i class="pi pi-lock text-[9px] mr-1.5"></i> Deployed
+                                </span>
+                            } @else {
+                                <span class="px-3 py-1.5 bg-slate-700/30 border border-slate-600/50 text-slate-400 text-[10px] uppercase font-bold rounded-full tracking-widest inline-flex items-center">
+                                    <i class="pi pi-wrench text-[9px] mr-1.5"></i> Maint.
+                                </span>
+                            }
+                        </td>
+
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="5" class="text-center py-16 text-slate-500">
+                            <i class="pi pi-database text-4xl mb-4 block text-slate-700/50"></i>
+                            <p class="text-lg">No assets found in the global registry.</p>
+                        </td>
+                    </tr>
+                </ng-template>
+                
+            </p-table>
+        }
+    </div>
+</div>
