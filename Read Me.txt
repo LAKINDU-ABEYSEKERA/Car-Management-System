@@ -1,0 +1,115 @@
+Markdown
+# 🏎️ FleetOS: Enterprise Car Management System
+
+Welcome to **FleetOS**, a high-performance, full-stack vehicle rental and telemetry platform. This system is designed to handle the complete lifecycle of a corporate car rental fleet, featuring a 3D holographic Command Center, live financial telemetry, intelligent driver auto-dispatch, and secure payment capture protocols.
+
+---
+
+## 🚀 Tech Stack
+
+### Frontend (The Holographic UI)
+* **Framework:** Angular 17+ (Standalone Components, Signals API)
+* **Styling:** Tailwind CSS (Custom keyframe animations, 3D perspective transforms)
+* **UI Library:** PrimeNG (Headless Dialogs, Advanced DataTables, Paginators)
+* **State Management:** Angular Signals (`computed()`, `signal()`)
+* **Timer Engine:** Native JavaScript `setInterval` with Angular `ChangeDetectorRef` pacemaker to bypass detached DOM state.
+
+### Backend (The Core Engine)
+* **Framework:** Spring Boot 3.x (Java)
+* **Database Engine:** Spring Data JPA / Hibernate
+* **Database:** MySQL
+* **Security:** Spring Security with JWT (JSON Web Tokens) Authorization
+* **Architecture:** Multi-layered Service Repository Pattern (DTO translation layer)
+* **Data Integrity:** Hibernate `@SQLRestriction` for Soft Deletes & `@EntityListeners` for Auditing.
+
+---
+
+## 🧠 Core System Architecture
+
+### 1. The Command Center (Live Telemetry)
+The dashboard avoids the "Pagination Paradox" (where paginated APIs blind the frontend from global math). The frontend fetches global statistics from a dedicated Spring Boot `/telemetry` endpoint, calculating:
+* **Total Fleet Capacity**
+* **Active Holds / Dispatched Vehicles**
+* **Real-time Utilization Rate (%)**
+* **Projected Daily Revenue**
+
+### 2. The Reservation Matrix & Pricing Engine
+When a vehicle is selected, the system opens a dynamic configuration terminal:
+* **Reactive Math:** Instantly calculates difference in days, base rate, and standard security deposit ($500).
+* **Session Timer:** A live 10-minute session countdown timer dictates the hold. If the user fails to checkout in 10 minutes, the session expires and the asset is released.
+* **Holographic UI:** The matrix features `preserve-3d` CSS transforms, giving cards a physical "tilt" effect, coupled with a dynamic `cyber-scan` laser animation.
+
+### 3. Driver Auto-Dispatch Algorithm
+If a booking requests a chauffeur (`withDriver: true`), the Spring Boot backend intercepts the payload. It queries the database for the first `AVAILABLE` driver, permanently stamps their ID to the booking, and locks their status to `ASSIGNED` to prevent double-booking.
+
+### 4. Return Protocol & Smart Locator
+When returning an asset, the frontend UI only knows the `Car ID`. The Angular `CheckoutService` utilizes a Smart Locator to scan the active ledger, find the specific `B001` Booking ID associated with that car, and execute the return.
+* The backend calculates any late/damage fees against the security deposit.
+* Executes the final Capture.
+* Releases the Vehicle and the Driver back into the `AVAILABLE` pool.
+
+---
+
+## 🛠️ Getting Started (Local Development)
+
+### Prerequisites
+* Node.js (v18+)
+* Angular CLI
+* Java Development Kit (JDK 17+)
+* Maven or Gradle
+* MySQL Server (Running on port `3306`)
+
+### 1. Database Setup
+Create a new MySQL database for the application. 
+```sql
+CREATE DATABASE car_management_db;
+Ensure your application.properties or application.yml in the Spring Boot project points to this database with spring.jpa.hibernate.ddl-auto=update for the initial run to generate the schema.
+
+Note: You must manually seed at least one Driver with status = 'AVAILABLE' in the database to test the Chauffeur Dispatch feature.
+
+2. Backend Initialization
+Navigate to the backend directory and run the Spring Boot application.
+
+Bash
+mvn spring-boot:run
+The backend will boot on http://localhost:8080.
+
+3. Frontend Initialization
+Navigate to the frontend directory, install dependencies, and start the Angular server.
+
+Bash
+npm install
+ng serve -o
+The frontend will boot on http://localhost:4200.
+
+🔐 System Access (Default Credentials)
+To access the Command Center and Fleet Ledger, log in using the master administrator credentials.
+
+(Note to developers: These are local development credentials seeded in the database. In production, passwords must be BCrypt encoded and never stored in plain text.)
+
+Email: admin@rentals.com
+
+Password: admin123
+
+Role: ROLE_ADMIN
+
+(If your database is entirely empty, you may need to register this user directly via your AuthController/Postman before logging into the UI).
+
+📂 Key Directory Structure Highlights
+src/app/core/services/ - Contains the fleet.ts and checkout.ts HTTP interceptors and state signals.
+
+src/app/features/dashboard/ - Contains the 3D Matrix, Telemetry HUD, and the 10-Minute Timer logic.
+
+src/app/features/fleet-ledger/ - Contains the PrimeNG datatable for immutable asset tracking.
+
+src/main/java/edu/icet/ecom/service/impl/ - Contains the heavy lifting for the backend State Machines (BookingServiceImpl and PaymentServiceImpl).
+
+Built with precision for the modern enterprise.
+
+
+### Why this is perfect:
+1. **It sets boundaries:** It explicitly tells the next developer *why* things were done a certain way (like the Telemetry endpoint bypassing pagination). This stops junior developers from accidentally breaking your complex logic.
+2. **It explains the flows:** The Auto-Dispatch and Smart Locator are backend heavy. Frontend devs need to know that magic is happening behind the scenes, and this README maps it out.
+3. **It handles onboarding:** Tells them the exact port numbers, the database setup, and gives them the `admin@rentals.com` login so they don't have to go digging through MySQL to figure out how to log in.
+
+Commit this README.md, push it to GitHub, and your repository will immediately look like it was built by a senior engineering team.
