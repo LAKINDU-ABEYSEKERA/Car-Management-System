@@ -1,8 +1,10 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
 import { PaginatorModule } from 'primeng/paginator'; 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http'; 
+import { environment } from '../../../environments/environment'; 
 import { Checkout } from '../../core/services/checkout';
 import { Fleet } from '../../core/services/fleet';
 import { MessageService } from 'primeng/api';
@@ -36,6 +38,7 @@ export class Dashboard implements OnInit, OnDestroy {
   displayTime: string = '10:00';
   timerInterval: any;
 
+  private http = inject(HttpClient);
   private checkoutService = inject(Checkout);
   private messageService = inject(MessageService);
   fleetService = inject(Fleet);
@@ -43,7 +46,73 @@ export class Dashboard implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   first: number = 0;
-  rows: number = 8; // Matrix limit!
+  rows: number = 8; 
+
+  activeBookingsMap = new Map<string, string>(); 
+
+  // =========================================================================
+  // THE LIVE TELEMETRY & SURGE ENGINE
+  // =========================================================================
+  totalFleet = computed(() => this.fleetService.vehicles().length);
+  activeHolds = computed(() => this.fleetService.vehicles().filter(v => v.status === 'BOOKED').length);
+  
+  utilizationRate = computed(() => {
+    const total = this.totalFleet();
+    return total === 0 ? 0 : Math.round((this.activeHolds() / total) * 100);
+  });
+
+  // NEW: The Dynamic Surge Multiplier
+  surgeMultiplier = computed(() => {
+    const util = this.utilizationRate();
+    if (util >= 85) return 1.25; // CRITICAL SURGE: +25%
+    if (util >= 70) return 1.15; // ELEVATED SURGE: +15%
+    return 1.0;                  // STANDARD
+  });
+
+  // NEW: UI Helper for the Telemetry Card
+  surgeLabel = computed(() => {
+    const util = this.utilizationRate();
+    if (util >= 85) return 'Critical Demand Surge';
+    if (util >= 70) return 'Elevated Demand Surge';
+    return 'Standard Market Rates';
+  });
+
+  dailyRevenue = computed(() => {
+    return this.fleetService.vehicles()
+      .filter(v => v.status === 'BOOKED')
+      .reduce((sum, car) => sum + car.pricePerDay, 0);
+  });
+
+  loadActiveBookings() {
+    this.http.get<any>(`${environment.apiUrl}/bookings/getAllBookings`).subscribe({
+      next: (res) => {
+        this.activeBookingsMap.clear();
+        const bookings = res.data || [];
+        bookings.forEach((b: any) => {
+          if (b.bookingStatus === 'CONFIRMED') {
+            this.activeBookingsMap.set(b.carId, b.endDate);
+          }
+        });
+      }
+    });
+  }
+
+  getBookingUrgency(carId: string): 'SAFE' | 'DUE_TODAY' | 'OVERDUE' {
+    const endDateStr = this.activeBookingsMap.get(carId);
+    if (!endDateStr) return 'SAFE'; 
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(endDateStr);
+    endDate.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'OVERDUE';
+    if (diffDays === 0) return 'DUE_TODAY';
+    return 'SAFE';
+  }
 
   constructor() {
     this.carForm = this.fb.group({
@@ -62,12 +131,13 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   ngOnInit() { 
-    this.fleetService.loadFleet(0, this.rows); // Fetch 8 cars
-    this.fleetService.loadTelemetry(); // Fetch Global Math
+    this.fleetService.loadFleet(0, this.rows); 
+    this.fleetService.loadTelemetry(); 
+    this.loadActiveBookings(); 
   }
+  
   ngOnDestroy() { this.stopTimer(); }
 
-  // Fires when you click the arrows!
   onPageChange(event: any) {
     this.first = event.first;
     this.rows = event.rows;
@@ -78,6 +148,7 @@ export class Dashboard implements OnInit, OnDestroy {
     const currentPage = Math.floor(this.first / this.rows);
     this.fleetService.loadFleet(currentPage, this.rows);
     this.fleetService.loadTelemetry();
+    this.loadActiveBookings(); 
   }
 
   openAddCarModal() {
@@ -139,6 +210,7 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
+  // UPGRADED: Factors the Surge Multiplier into the final payload math!
   calculateDynamicPricing() {
     if (!this.selectedCar) return;
     const start = new Date(this.checkoutForm.value.startDate);
@@ -146,8 +218,14 @@ export class Dashboard implements OnInit, OnDestroy {
     let diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays <= 0 || isNaN(diffDays)) diffDays = 1;
     this.daysRequested = diffDays;
-    let calculatedTotal = this.selectedCar.pricePerDay * this.daysRequested;
+    
+    // Apply Surge Math to Base Rate
+    let baseSurgedRate = this.selectedCar.pricePerDay * this.surgeMultiplier();
+    let calculatedTotal = baseSurgedRate * this.daysRequested;
+    
+    // Add Chauffeur Fee (Standard rate, untouched by surge)
     if (this.checkoutForm.value.withDriver) calculatedTotal += (this.DRIVER_FEE_PER_DAY * this.daysRequested);
+    
     this.dynamicTotal = calculatedTotal;
   }
 
@@ -191,6 +269,7 @@ export class Dashboard implements OnInit, OnDestroy {
     const seconds = this.holdTimeLeft % 60;
     this.displayTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
+  
   stopTimer() { if (this.timerInterval) clearInterval(this.timerInterval); }
   closeCheckoutModal() { this.checkoutModalVisible = false; this.stopTimer(); }
 }
