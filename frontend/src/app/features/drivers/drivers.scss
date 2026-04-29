@@ -1,0 +1,63 @@
+/* ==================================================================== */
+/* DRIVER DISPATCH - HIGH OCTANE ANIMATIONS                             */
+/* ==================================================================== */
+
+/* Row Entrance */
+@keyframes row-slide-in {
+    0% { opacity: 0; transform: translateX(-30px) skewX(10deg); }
+    100% { opacity: 1; transform: translateX(0) skewX(0); }
+}
+.animate-row-enter {
+    animation: row-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    opacity: 0;
+}
+
+.dispatch-row {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+.dispatch-row:hover {
+    border-left-color: #f59e0b; /* Amber 500 */
+    background-color: rgba(245, 158, 11, 0.05);
+    transform: translateX(5px);
+}
+
+/* Digital Evaporation (Deletion) - Applied to td for browser support */
+@keyframes evaporate {
+    0% { filter: brightness(1); background-color: rgba(225, 29, 72, 0.3); }
+    40% { filter: brightness(2) blur(2px); transform: translateY(-5px); opacity: 1; }
+    100% { filter: brightness(3) blur(10px); transform: translateY(-20px); opacity: 0; background-color: transparent; }
+}
+.animate-evaporate td {
+    animation: evaporate 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards !important;
+    pointer-events: none;
+    transition: padding 0.3s ease 0.6s, border-color 0.3s ease 0.6s;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-color: transparent !important;
+}
+
+/* Dispatch Sync Flash (Update) */
+@keyframes dispatch-flash {
+    0% { background-color: rgba(245, 158, 11, 0.3); box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.5); }
+    100% { background-color: transparent; box-shadow: inset 0 0 0 transparent; }
+}
+.animate-dispatch td {
+    animation: dispatch-flash 1.2s ease-out forwards !important;
+}
+
+/* Hyper-Drive Spool Overlay (Saving) */
+@keyframes spool-up {
+    0% { width: 0%; opacity: 0; }
+    50% { opacity: 1; }
+    100% { width: 100%; opacity: 0; }
+}
+.hyper-spool {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.4), transparent);
+    animation: spool-up 1s ease-in-out infinite;
+    pointer-events: none;
+}

@@ -11,6 +11,7 @@ import edu.icet.ecom.model.enums.PaymentStatus;
 import edu.icet.ecom.repository.BookingRepository;
 import edu.icet.ecom.repository.CarRepository;
 import edu.icet.ecom.repository.PaymentRepository;
+import edu.icet.ecom.service.AuditService;
 import edu.icet.ecom.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final CarRepository carRepository;
+
+    private final AuditService auditService;
 
     // The standard security deposit applied to all rentals
     private static final Double STANDARD_DEPOSIT = 500.00;
@@ -77,15 +80,6 @@ public class PaymentServiceImpl implements PaymentService {
         return mapToDTO(savedPayment);
     }
 
-
-
-
-
-
-
-
-
-
     @Override
     public PaymentDTO refundPayment(String bookingId) {
         log.warn("Initiating refund process for Booking ID: {}", bookingId);
@@ -117,13 +111,13 @@ public class PaymentServiceImpl implements PaymentService {
 
         log.info("Refund successful. Booking {} cancelled and Car {} is AVAILABLE.", bookingId, car.getCarId());
 
+        // 4. TRIGGER THE TERMINAL ANIMATION:
+        auditService.logEvent("REFUND", "FINANCE_ENGINE",
+                String.format("Payment %s refunded. Booking %s cancelled. Car %s freed.",
+                        payment.getPaymentId(), bookingId, car.getCarId()));
+
         return mapToDTO(payment);
     }
-
-
-
-
-
 
     // =========================================================================
     // PRIVATE HELPER METHODS

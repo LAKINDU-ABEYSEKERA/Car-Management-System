@@ -28,10 +28,18 @@ public class CarServiceImpl implements CarService {
     private final CarRepository carRepository;
 
     @Override
-    public PaginatedResponse<CarDTO> getAllCars(int page, int size) {
-        log.info("Fetching cars - Page: {}, Size: {}", page, size);
+    public PaginatedResponse<CarDTO> getAllCars(int page, int size, String search) {
+        log.info("Fetching cars - Page: {}, Size: {}, Search: '{}'", page, size, search);
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("carId").descending());
-        Page<Car> carPage = carRepository.findAll(pageable);
+        Page<Car> carPage;
+
+        // THE SEARCH LOGIC
+        if (search != null && !search.trim().isEmpty()) {
+            carPage = carRepository.findByBrandContainingIgnoreCaseOrModelContainingIgnoreCase(search, search, pageable);
+        } else {
+            carPage = carRepository.findAll(pageable);
+        }
 
         List<CarDTO> dtoList = carPage.getContent().stream().map(this::mapToDTO).toList();
 

@@ -10,6 +10,8 @@ public interface CarService {
     CarDTO deleteCar(String id);
 
     // NEW: The paginated fetch method!
-    PaginatedResponse<CarDTO> getAllCars(int page, int size);
+    PaginatedResponse<CarDTO> getAllCars(int page, int size, String search);
     java.util.Map<String, Object> getFleetTelemetry();
+
+
 }

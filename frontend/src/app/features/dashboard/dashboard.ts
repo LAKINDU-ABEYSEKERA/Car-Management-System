@@ -1,40 +1,55 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
-import { PaginatorModule } from 'primeng/paginator'; 
+import { PaginatorModule } from 'primeng/paginator';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http'; 
-import { environment } from '../../../environments/environment'; 
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { Checkout } from '../../core/services/checkout';
 import { Fleet } from '../../core/services/fleet';
 import { MessageService } from 'primeng/api';
+import { ActivatedRoute } from '@angular/router';
+
+// EXTRACTED UI COMPONENTS
+import { TelemetryCardsComponent } from './components/telemetry-cards.component';
+import { VehicleCardComponent } from './components/vehicle-card.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DialogModule, ReactiveFormsModule, PaginatorModule],
+  imports: [
+    CommonModule,
+    DialogModule,
+    ReactiveFormsModule,
+    PaginatorModule,
+    TelemetryCardsComponent,
+    VehicleCardComponent
+  ],
   templateUrl: './dashboard.html'
 })
 export class Dashboard implements OnInit, OnDestroy {
+
+  private route = inject(ActivatedRoute);
+
   checkoutModalVisible: boolean = false;
   addCarModalVisible: boolean = false;
-  returnModalVisible: boolean = false; 
-  
+  returnModalVisible: boolean = false;
+
   isProcessing: boolean = false;
   isAddingCar: boolean = false;
   isReturning: boolean = false;
   selectedCar: any = null;
 
-  carForm: FormGroup; 
+  carForm: FormGroup;
   checkoutForm: FormGroup;
-  returnForm: FormGroup; 
+  returnForm: FormGroup;
 
   dynamicTotal: number = 0;
   daysRequested: number = 1;
-  readonly DRIVER_FEE_PER_DAY = 50; 
+  readonly DRIVER_FEE_PER_DAY = 50;
   readonly SECURITY_DEPOSIT = 500;
 
-  holdTimeLeft: number = 600; 
+  holdTimeLeft: number = 600;
   displayTime: string = '10:00';
   timerInterval: any;
 
@@ -46,30 +61,46 @@ export class Dashboard implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   first: number = 0;
-  rows: number = 8; 
+  rows: number = 8;
 
-  activeBookingsMap = new Map<string, string>(); 
+  activeBookingsMap = new Map<string, string>();
+  customers = signal<any[]>([]);
 
-  // =========================================================================
-  // THE LIVE TELEMETRY & SURGE ENGINE
-  // =========================================================================
+  searchQuery = signal<string>('');
+  focusedCarId = signal<string | null>(null);
+
+  // THE SMART FILTER: Upgraded to support "Brand + Model" full string searches!
+  filteredVehicles = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    const allCars = this.fleetService.vehicles();
+    
+    if (!query) return allCars;
+
+    return allCars.filter(car => {
+      // 1. Combine the brand and model into a single searchable string
+      const fullCarName = `${car.brand} ${car.model}`.toLowerCase();
+      const carId = car.carId.toLowerCase();
+
+      // 2. Check if the query exists in the full name OR the Car ID
+      return fullCarName.includes(query) || carId.includes(query);
+    });
+  });
+
   totalFleet = computed(() => this.fleetService.vehicles().length);
   activeHolds = computed(() => this.fleetService.vehicles().filter(v => v.status === 'BOOKED').length);
-  
+
   utilizationRate = computed(() => {
     const total = this.totalFleet();
     return total === 0 ? 0 : Math.round((this.activeHolds() / total) * 100);
   });
 
-  // NEW: The Dynamic Surge Multiplier
   surgeMultiplier = computed(() => {
     const util = this.utilizationRate();
-    if (util >= 85) return 1.25; // CRITICAL SURGE: +25%
-    if (util >= 70) return 1.15; // ELEVATED SURGE: +15%
-    return 1.0;                  // STANDARD
+    if (util >= 85) return 1.25;
+    if (util >= 70) return 1.15;
+    return 1.0;
   });
 
-  // NEW: UI Helper for the Telemetry Card
   surgeLabel = computed(() => {
     const util = this.utilizationRate();
     if (util >= 85) return 'Critical Demand Surge';
@@ -82,6 +113,49 @@ export class Dashboard implements OnInit, OnDestroy {
       .filter(v => v.status === 'BOOKED')
       .reduce((sum, car) => sum + car.pricePerDay, 0);
   });
+
+  constructor() {
+    this.carForm = this.fb.group({
+      brand: ['', Validators.required], model: ['', Validators.required],
+      seatingCapacity: [4, [Validators.required, Validators.min(2), Validators.max(15)]],
+      fuelType: ['ELECTRIC', Validators.required], pricePerDay: [150, [Validators.required, Validators.min(1)]],
+      status: ['AVAILABLE']
+    });
+
+    this.checkoutForm = this.fb.group({
+      customerId: ['', Validators.required],
+      startDate: ['', Validators.required],
+      endDate: ['', Validators.required],
+      withDriver: [false]
+    });
+
+    this.returnForm = this.fb.group({
+      lateFees: [0, [Validators.required, Validators.min(0)]], damageFees: [0, [Validators.required, Validators.min(0)]]
+    });
+    this.checkoutForm.valueChanges.subscribe(() => this.calculateDynamicPricing());
+  }
+
+  ngOnInit() {
+    this.fleetService.loadFleet(0, this.rows);
+    this.fleetService.loadTelemetry();
+    this.loadActiveBookings();
+    this.loadCustomers();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['search']) {
+        this.searchQuery.set(params['search']);
+      } else {
+        this.searchQuery.set('');
+      }
+
+      if (params['focus']) {
+        this.focusedCarId.set(params['focus']);
+        setTimeout(() => this.focusedCarId.set(null), 2000);
+      }
+    });
+  }
+
+  ngOnDestroy() { this.stopTimer(); }
 
   loadActiveBookings() {
     this.http.get<any>(`${environment.apiUrl}/bookings/getAllBookings`).subscribe({
@@ -97,13 +171,29 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
+  loadCustomers() {
+    this.http.get<any>(`${environment.apiUrl}/customers/getAllCustomers?page=0&size=1000`).subscribe({
+      next: (res) => {
+        let clientData = res.data?.content || [];
+        this.customers.set(clientData);
+      },
+      error: (err) => {
+        console.warn('Customer API failed. Injecting Fallback Dummy Data...');
+        this.customers.set([
+          { customerId: 'C001', customerName: 'Wayne Enterprises (Fallback)' },
+          { customerId: 'C002', customerName: 'Stark Industries (Fallback)' },
+          { customerId: 'C003', customerName: 'LexCorp Operations (Fallback)' }
+        ]);
+      }
+    });
+  }
+
   getBookingUrgency(carId: string): 'SAFE' | 'DUE_TODAY' | 'OVERDUE' {
     const endDateStr = this.activeBookingsMap.get(carId);
-    if (!endDateStr) return 'SAFE'; 
+    if (!endDateStr) return 'SAFE';
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const endDate = new Date(endDateStr);
     endDate.setHours(0, 0, 0, 0);
 
@@ -113,30 +203,6 @@ export class Dashboard implements OnInit, OnDestroy {
     if (diffDays === 0) return 'DUE_TODAY';
     return 'SAFE';
   }
-
-  constructor() {
-    this.carForm = this.fb.group({
-      brand: ['', Validators.required], model: ['', Validators.required],
-      seatingCapacity: [4, [Validators.required, Validators.min(2), Validators.max(15)]],
-      fuelType: ['ELECTRIC', Validators.required], pricePerDay: [150, [Validators.required, Validators.min(1)]],
-      status: ['AVAILABLE']
-    });
-    this.checkoutForm = this.fb.group({
-      startDate: ['', Validators.required], endDate: ['', Validators.required], withDriver: [false]
-    });
-    this.returnForm = this.fb.group({
-      lateFees: [0, [Validators.required, Validators.min(0)]], damageFees: [0, [Validators.required, Validators.min(0)]]
-    });
-    this.checkoutForm.valueChanges.subscribe(() => this.calculateDynamicPricing());
-  }
-
-  ngOnInit() { 
-    this.fleetService.loadFleet(0, this.rows); 
-    this.fleetService.loadTelemetry(); 
-    this.loadActiveBookings(); 
-  }
-  
-  ngOnDestroy() { this.stopTimer(); }
 
   onPageChange(event: any) {
     this.first = event.first;
@@ -148,7 +214,7 @@ export class Dashboard implements OnInit, OnDestroy {
     const currentPage = Math.floor(this.first / this.rows);
     this.fleetService.loadFleet(currentPage, this.rows);
     this.fleetService.loadTelemetry();
-    this.loadActiveBookings(); 
+    this.loadActiveBookings();
   }
 
   openAddCarModal() {
@@ -180,12 +246,18 @@ export class Dashboard implements OnInit, OnDestroy {
       const today = new Date();
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
+
       this.checkoutForm.patchValue({
-        startDate: today.toISOString().split('T')[0], endDate: tomorrow.toISOString().split('T')[0], withDriver: false
+        customerId: '',
+        startDate: today.toISOString().split('T')[0],
+        endDate: tomorrow.toISOString().split('T')[0],
+        withDriver: false
       });
+
       this.calculateDynamicPricing();
       this.checkoutModalVisible = true;
       this.startCheckoutTimer();
+
     } else if (car.status === 'BOOKED') {
       this.returnForm.reset({ lateFees: 0, damageFees: 0 });
       this.returnModalVisible = true;
@@ -201,7 +273,7 @@ export class Dashboard implements OnInit, OnDestroy {
         this.isReturning = false;
         this.returnModalVisible = false;
         this.messageService.add({ severity: 'success', summary: 'Capture Complete', detail: `${this.selectedCar.brand} returned.` });
-        this.refreshDashboard(); 
+        this.refreshDashboard();
       },
       error: (err) => {
         this.isReturning = false;
@@ -210,7 +282,6 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
-  // UPGRADED: Factors the Surge Multiplier into the final payload math!
   calculateDynamicPricing() {
     if (!this.selectedCar) return;
     const start = new Date(this.checkoutForm.value.startDate);
@@ -218,14 +289,12 @@ export class Dashboard implements OnInit, OnDestroy {
     let diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays <= 0 || isNaN(diffDays)) diffDays = 1;
     this.daysRequested = diffDays;
-    
-    // Apply Surge Math to Base Rate
+
     let baseSurgedRate = this.selectedCar.pricePerDay * this.surgeMultiplier();
     let calculatedTotal = baseSurgedRate * this.daysRequested;
-    
-    // Add Chauffeur Fee (Standard rate, untouched by surge)
+
     if (this.checkoutForm.value.withDriver) calculatedTotal += (this.DRIVER_FEE_PER_DAY * this.daysRequested);
-    
+
     this.dynamicTotal = calculatedTotal;
   }
 
@@ -233,14 +302,20 @@ export class Dashboard implements OnInit, OnDestroy {
     if (!this.selectedCar || this.checkoutForm.invalid) return;
     this.isProcessing = true;
     const formVals = this.checkoutForm.value;
+
     this.checkoutService.processVehicleHold(
-      this.selectedCar.carId, 'C001', formVals.startDate, formVals.endDate, this.dynamicTotal, formVals.withDriver
+      this.selectedCar.carId,
+      formVals.customerId,
+      formVals.startDate,
+      formVals.endDate,
+      this.dynamicTotal,
+      formVals.withDriver
     ).subscribe({
       next: () => {
         this.isProcessing = false;
-        this.closeCheckoutModal(); 
+        this.closeCheckoutModal();
         this.messageService.add({ severity: 'success', summary: 'Asset Secured', detail: `${this.selectedCar.brand} is locked.` });
-        this.refreshDashboard(); 
+        this.refreshDashboard();
       },
       error: (err) => {
         this.isProcessing = false;
@@ -250,13 +325,13 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   startCheckoutTimer() {
-    this.stopTimer(); 
-    this.holdTimeLeft = 600; 
+    this.stopTimer();
+    this.holdTimeLeft = 600;
     this.updateDisplayTime();
     this.timerInterval = setInterval(() => {
       this.holdTimeLeft--;
       this.updateDisplayTime();
-      this.cdr.detectChanges(); 
+      this.cdr.detectChanges();
       if (this.holdTimeLeft <= 0) {
         this.closeCheckoutModal();
         this.messageService.add({ severity: 'warn', summary: 'Session Expired', detail: 'Reservation window timed out.' });
@@ -269,7 +344,7 @@ export class Dashboard implements OnInit, OnDestroy {
     const seconds = this.holdTimeLeft % 60;
     this.displayTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
-  
+
   stopTimer() { if (this.timerInterval) clearInterval(this.timerInterval); }
   closeCheckoutModal() { this.checkoutModalVisible = false; this.stopTimer(); }
 }

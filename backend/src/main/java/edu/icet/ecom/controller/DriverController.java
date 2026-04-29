@@ -16,16 +16,17 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/driver")
+@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 public class DriverController {
 
     private final DriverService driverService;
 
     // =========================================================================
-    // OPERATIONS FOR ALL EMPLOYEES (ADMIN & STAFF)
+    // OPERATIONS FOR ALL EMPLOYEES (ADMIN & USER)
     // =========================================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping("/addDriver")
     public ResponseEntity<StandardResponse> addDriver(@Valid @RequestBody DriverDTO driverDTO) {
         log.info("Request received to add a new driver");
@@ -34,7 +35,7 @@ public class DriverController {
                 .body(new StandardResponse(HttpStatus.CREATED.value(), "Driver added successfully", savedDriver));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/getDriver/{driverId}")
     public ResponseEntity<StandardResponse> getDriver(@PathVariable String driverId) {
         DriverDTO driver = driverService.getDriver(driverId);
@@ -43,7 +44,7 @@ public class DriverController {
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/getAllDrivers")
     public ResponseEntity<StandardResponse> getAllDrivers() {
         List<DriverDTO> drivers = driverService.getAllDrivers();

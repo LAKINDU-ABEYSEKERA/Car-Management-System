@@ -23,6 +23,7 @@ public class CarController {
     // Injecting the service layer!
     private final CarService carService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping("/addCar")
     public ResponseEntity<StandardResponse> addCar(@Valid @RequestBody CarDTO carDTO) {
         log.info("Request received to add new car: {} {}", carDTO.getBrand(), carDTO.getModel());
@@ -34,7 +35,7 @@ public class CarController {
                 .body(new StandardResponse(HttpStatus.CREATED.value(), "Car added successfully", savedCar));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/getCar/{id}")
     public ResponseEntity<StandardResponse> getCar(@PathVariable String id) {
         log.info("Fetching car with ID: {}", id);
@@ -45,21 +46,25 @@ public class CarController {
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/getAllCars")
     public ResponseEntity<StandardResponse> getAllCars(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "search", defaultValue = "") String search // <-- ADD THIS Explicit param!
     ) {
-        log.info("Fetching all cars - Page: {}, Size: {}", page, size);
-        PaginatedResponse<CarDTO> paginatedCars = carService.getAllCars(page, size);
+        log.info("Fetching all cars - Page: {}, Size: {}, Search: '{}'", page, size, search);
+
+        // Pass the search param down to the service
+        PaginatedResponse<CarDTO> paginatedCars = carService.getAllCars(page, size, search);
 
         return ResponseEntity.ok(
                 new StandardResponse(HttpStatus.OK.value(), "Cars retrieved successfully", paginatedCars)
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/telemetry")
     public ResponseEntity<StandardResponse> getTelemetry() {
         Map<String, Object> stats = carService.getFleetTelemetry();
@@ -71,7 +76,7 @@ public class CarController {
 
 
 
-
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PutMapping("/updateCar")
     public ResponseEntity<StandardResponse> updateCar(@Valid @RequestBody CarDTO carDTO) {
         log.info("Updating car ID: {}", carDTO.getCarId());
@@ -82,6 +87,7 @@ public class CarController {
         );
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/deleteCar/{id}")
     public ResponseEntity<StandardResponse> deleteCar(@PathVariable String id) {
         log.info("Attempting to delete car ID: {}", id);

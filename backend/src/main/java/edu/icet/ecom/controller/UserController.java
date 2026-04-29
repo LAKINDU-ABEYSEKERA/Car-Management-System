@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
 
     private final UserService userService;
@@ -42,6 +43,19 @@ public class UserController {
 
         return ResponseEntity.ok(
                 new StandardResponse(HttpStatus.OK.value(), "User deleted successfully", null)
+        );
+    }
+
+    // =========================================================================
+    // READ OPERATION (STAFF & ADMIN)
+    // =========================================================================
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @GetMapping("/getAllUsers")
+    public ResponseEntity<StandardResponse> getAllUsers() {
+        log.info("Request received to fetch all personnel.");
+
+        return ResponseEntity.ok(
+                new StandardResponse(HttpStatus.OK.value(), "All personnel retrieved", userService.getAllUsers())
         );
     }
 }

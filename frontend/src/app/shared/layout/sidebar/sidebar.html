@@ -1,27 +1,67 @@
-<div class="flex flex-col h-full text-slate-300">
-    <div class="h-20 flex items-center px-8 border-b border-slate-800/50 bg-slate-900/30">
-        <div class="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 mr-3">
+<div class="flex flex-col h-full text-slate-300 relative z-20 bg-slate-900/30 backdrop-blur-md">
+    
+    <div class="h-20 flex items-center px-8 border-b border-slate-800/50 bg-slate-950/50 shadow-md relative overflow-hidden">
+        <div class="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
+        
+        <div class="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] mr-3 relative group">
+            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity rounded"></div>
             <i class="pi pi-car text-white text-sm"></i>
         </div>
-        <span class="text-xl font-bold text-white tracking-widest">FLEET<span class="font-light text-indigo-400">OS</span></span>
+        <span class="text-xl font-black text-white tracking-widest drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+            FLEET<span class="font-light text-indigo-400">OS</span>
+        </span>
     </div>
 
-    <nav class="flex-1 py-8 px-4 space-y-2">
-        <a routerLink="/dashboard" routerLinkActive="bg-indigo-600/10 text-indigo-400 border-indigo-500" [routerLinkActiveOptions]="{exact: true}" class="flex items-center px-4 py-3 rounded-xl hover:bg-slate-800/50 transition-all duration-300 border-l-4 border-transparent group">
-            <i class="pi pi-chart-pie mr-4 text-lg group-hover:scale-110 transition-transform"></i>
-            <span class="font-medium tracking-wide">Command Center</span>
-        </a>
+    <nav class="flex-1 py-8 px-4 space-y-2 overflow-y-auto cyber-scrollbar">
+        
+        <span class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4 opacity-0 animate-fade-in-up" style="animation-delay: 0.1s;">
+            Core Systems
+        </span>
 
-        <a routerLink="/fleet" routerLinkActive="bg-indigo-600/10 text-indigo-400 border-indigo-500" class="flex items-center px-4 py-3 rounded-xl hover:bg-slate-800/50 transition-all duration-300 border-l-4 border-transparent group">
-            <i class="pi pi-list mr-4 text-lg group-hover:scale-110 transition-transform"></i>
-            <span class="font-medium tracking-wide">Fleet Ledger</span>
-        </a>
+        @for (item of menuItems; track item.route; let i = $index) {
+            
+            @if (!item.requiresAdmin || isAdmin()) {
+                
+                @if (item.requiresAdmin && menuItems[i - 1]?.requiresAdmin === false) {
+                    <div class="h-px bg-slate-800/50 my-6 mx-4 opacity-0 animate-fade-in-up" [style.animation-delay]="(i * 0.1) + 's'"></div>
+                    <span class="px-4 text-[10px] font-bold text-rose-500/70 uppercase tracking-widest block mb-4 opacity-0 animate-fade-in-up" [style.animation-delay]="(i * 0.1) + 's'">
+                        Level 5 Access
+                    </span>
+                }
+
+                <a [routerLink]="item.route" 
+                   routerLinkActive="bg-indigo-600/10 text-indigo-400 border-indigo-500 shadow-[inset_0_0_20px_rgba(99,102,241,0.15)] pointer-events-none" 
+                   [routerLinkActiveOptions]="{exact: false}" 
+                   #rla="routerLinkActive"
+                   class="flex items-center px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white transition-all duration-300 border-l-[4px] border-transparent group relative overflow-hidden opacity-0 animate-fade-in-up"
+                   [style.animation-delay]="(i * 0.1 + 0.2) + 's'">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-indigo-500/5 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+
+                    <i class="pi {{ item.icon }} mr-4 text-lg group-hover:scale-110 group-hover:text-indigo-400 transition-all"
+                       [ngClass]="{'text-rose-400/70 group-hover:text-rose-400': item.requiresAdmin}"></i>
+                    
+                    <span class="font-medium tracking-wide group-hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] transition-all">
+                        {{ item.label }}
+                    </span>
+
+                    <div class="absolute right-4 w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-0 transition-opacity shadow-[0_0_10px_rgba(99,102,241,0.8)]"
+                         [class.!opacity-100]="rla.isActive"></div>
+                </a>
+            }
+        }
     </nav>
 
-    <div class="p-6 border-t border-slate-800/50 bg-slate-900/20">
-        <div class="flex items-center space-x-3 text-sm">
-            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span class="text-slate-400 font-medium">System Online</span>
+    <div class="p-6 border-t border-slate-800/50 bg-slate-950/50 opacity-0 animate-fade-in-up" style="animation-delay: 1s;">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3 text-sm">
+                <div class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </div>
+                <span class="text-emerald-500/80 font-mono font-bold text-xs uppercase tracking-widest">Sys Online</span>
+            </div>
+            <i class="pi pi-wifi text-slate-600"></i>
         </div>
     </div>
 </div>

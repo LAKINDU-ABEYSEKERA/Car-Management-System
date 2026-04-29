@@ -24,7 +24,7 @@ public class PaymentController {
     // MAIN PAYMENT OPERATION (STAFF & ADMIN)
     // =========================================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping("/authorize")
     public ResponseEntity<StandardResponse> authorizePayment(@Valid @RequestBody PaymentDTO request) {
         log.info("Processing payment hold for Booking ID: {}", request.getBookingId());

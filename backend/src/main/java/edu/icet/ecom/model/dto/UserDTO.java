@@ -23,7 +23,7 @@ public class UserDTO {
    // @NotBlank(message = "Password cannot be empty")
    // @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$",
     //        message = "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number")
-    //private String password;
+    private String password;
 
     @NotBlank(message = "Email cannot be empty")
     @Email(message = "Invalid email format")

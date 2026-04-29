@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,10 +28,23 @@ public class UserServiceImpl implements UserService {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("User not found with ID: " + userId));
 
-        // Note: We usually do NOT update the email/username here as it breaks login history,
-        // but we can safely update name and role!
+        // 1. Update the safe fields
         existingUser.setUserName(userDTO.getUserName());
         existingUser.setRole(userDTO.getRole());
+
+        // 2. SECURE EMAIL UPDATE LOGIC
+        // Only update if the email is actually changing
+        if (!existingUser.getEmail().equalsIgnoreCase(userDTO.getEmail())) {
+
+            // Check if the new email is already taken by someone else
+            if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+                throw new BusinessException("Update Failed: That email is already registered to another user!");
+            }
+
+            // If it's free, apply the new email
+            existingUser.setEmail(userDTO.getEmail());
+            log.info("User ID {} email updated to {}", userId, userDTO.getEmail());
+        }
 
         User updatedUser = userRepository.save(existingUser);
         return mapToDTO(updatedUser);
@@ -52,11 +67,20 @@ public class UserServiceImpl implements UserService {
         log.info("User {} deleted successfully.", userToDelete.getEmail());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserDTO> getAllUsers() {
+        log.info("Fetching all personnel records from the database");
+        return userRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     // --- Helper Method ---
     private UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setUserId(user.getUserId().toString());
-        dto.setUserName(user.getUsername());
+        dto.setUserName(user.getuserName());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
         return dto;

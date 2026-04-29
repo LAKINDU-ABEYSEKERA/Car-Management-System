@@ -1,60 +1,6 @@
-<style>
-    .matrix-grid { perspective: 1500px; }
-    .cyber-card {
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        transform-style: preserve-3d;
-    }
-    .cyber-card:hover {
-        transform: rotateY(12deg) rotateX(-5deg) translateZ(30px) scale(1.05);
-        z-index: 50;
-    }
-    
-    /* THE HUD SCANNER LASER */
-    @keyframes cyber-scan {
-        0% { top: -10%; opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { top: 110%; opacity: 0; }
-    }
-    .animate-cyber-scan {
-        animation: cyber-scan 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    }
-
-    /* ==================================================================== */
-    /* NEW: CUSTOM SURGE ANIMATIONS (Fixed Opacity Collision)               */
-    /* ==================================================================== */
-    
-    /* Cyan Glow for 15% Surge */
-    .glow-surge-elevated {
-        opacity: 1 !important; /* FIX: Forces card to remain visible */
-        box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 15px rgba(34, 211, 238, 0.1) !important;
-        border-color: rgba(34, 211, 238, 0.6) !important;
-    }
-    
-    /* Fuchsia Throb for 25% Peak Surge */
-    @keyframes surge-peak {
-        0% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.3), inset 0 0 10px rgba(217, 70, 239, 0.1); border-color: rgba(217, 70, 239, 0.4); transform: scale(1); }
-        50% { box-shadow: 0 0 40px rgba(217, 70, 239, 0.7), inset 0 0 25px rgba(217, 70, 239, 0.3); border-color: rgba(217, 70, 239, 0.8); transform: scale(1.02); }
-        100% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.3), inset 0 0 10px rgba(217, 70, 239, 0.1); border-color: rgba(217, 70, 239, 0.4); transform: scale(1); }
-    }
-    .animate-surge-peak {
-        opacity: 1 !important; /* FIX: Prevents Tailwind opacity-0 from hiding the card! */
-        animation: surge-peak 2s ease-in-out infinite;
-    }
-
-    /* Text Throb for Matrix Prices */
-    @keyframes text-glow-pulse {
-        0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px rgba(217,70,239,0.4)); }
-        50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(217,70,239,1)); }
-    }
-    .animate-text-glow {
-        animation: text-glow-pulse 1.5s ease-in-out infinite;
-    }
-</style>
-
 <div class="space-y-8">
     
-    <div class="opacity-0 animate-fade-in-up flex items-end justify-between border-b border-slate-800 pb-4" style="animation-delay: 0.1s;">
+    <div class="opacity-0 animate-fade-in-up flex items-end justify-between pb-4" style="animation-delay: 0.1s;">
         <div>
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 tracking-tight">
                 Command Center
@@ -67,83 +13,11 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-indigo-500/50 hover:shadow-[0_10px_30px_rgba(99,102,241,0.2)] transition-all duration-300 group" style="animation-delay: 0.2s;">
-            <div class="flex justify-between items-start mb-4">
-                <div class="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
-                    <i class="pi pi-car text-xl text-blue-400"></i>
-                </div>
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Fleet</span>
-            </div>
-            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().totalFleet }}</h3>
-            <p class="text-emerald-400 text-sm mt-2 flex items-center"><i class="pi pi-arrow-up mr-1 text-xs"></i> 8% from last week</p>
-        </div>
-
-        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-amber-500/50 hover:shadow-[0_10px_30px_rgba(245,158,11,0.2)] transition-all duration-300 group" style="animation-delay: 0.3s;">
-            <div class="flex justify-between items-start mb-4">
-                <div class="p-3 bg-amber-500/10 rounded-xl group-hover:bg-amber-500/20 transition-colors">
-                    <i class="pi pi-stopwatch text-xl text-amber-400"></i>
-                </div>
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Active Holds</span>
-            </div>
-            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().activeHolds }}</h3>
-            <p class="text-amber-400 text-sm mt-2">Assets successfully deployed</p>
-            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                <div class="bg-gradient-to-r from-amber-500 to-orange-400 h-1.5 rounded-full animate-glow-pulse" [style.width.%]="fleetService.telemetry().utilizationRate"></div>
-            </div>
-        </div>
-
-        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border p-6 rounded-2xl transition-all duration-300 group" 
-             [ngClass]="{
-                'border-slate-700/50 hover:-translate-y-2 hover:border-purple-500/50 hover:shadow-[0_10px_30px_rgba(168,85,247,0.2)]': surgeMultiplier() === 1.0,
-                'glow-surge-elevated hover:-translate-y-2': surgeMultiplier() === 1.15,
-                'animate-surge-peak hover:-translate-y-2': surgeMultiplier() === 1.25
-             }"
-             style="animation-delay: 0.4s;">
-            <div class="flex justify-between items-start mb-4">
-                <div class="p-3 rounded-xl transition-colors"
-                     [ngClass]="{
-                        'bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-400': surgeMultiplier() === 1.0,
-                        'bg-cyan-500/10 group-hover:bg-cyan-500/20 text-cyan-400': surgeMultiplier() === 1.15,
-                        'bg-fuchsia-500/10 group-hover:bg-fuchsia-500/20 text-fuchsia-400': surgeMultiplier() === 1.25
-                     }">
-                    <i class="pi pi-bolt text-xl"></i>
-                </div>
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Pricing Engine</span>
-            </div>
-            
-            <h3 class="text-3xl font-black transition-all duration-300"
-                [ngClass]="{
-                    'text-slate-100': surgeMultiplier() === 1.0,
-                    'text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]': surgeMultiplier() === 1.15,
-                    'text-fuchsia-300 drop-shadow-[0_0_15px_rgba(217,70,239,0.9)]': surgeMultiplier() === 1.25
-                }">
-                {{ surgeMultiplier() === 1.0 ? 'Standard' : (surgeMultiplier() === 1.15 ? '+15%' : '+25%') }}
-            </h3>
-            
-            <p class="text-sm mt-2 font-medium transition-colors"
-               [ngClass]="{
-                   'text-purple-400': surgeMultiplier() === 1.0,
-                   'text-cyan-400/80': surgeMultiplier() === 1.15,
-                   'text-fuchsia-400/80': surgeMultiplier() === 1.25
-               }">
-                {{ surgeLabel() }}
-            </p>
-        </div>
-
-        <div class="opacity-0 animate-fade-in-up bg-slate-900/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl hover:-translate-y-2 hover:border-emerald-500/50 hover:shadow-[0_10px_30px_rgba(16,185,129,0.2)] transition-all duration-300 group" style="animation-delay: 0.5s;">
-            <div class="flex justify-between items-start mb-4">
-                <div class="p-3 bg-emerald-500/10 rounded-xl group-hover:bg-emerald-500/20 transition-colors">
-                    <i class="pi pi-wallet text-xl text-emerald-400"></i>
-                </div>
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Daily Revenue</span>
-            </div>
-            <h3 class="text-3xl font-black text-slate-100">{{ fleetService.telemetry().dailyRevenue | currency:'USD':'symbol':'1.0-0' }}</h3>
-            <p class="text-slate-400 text-sm mt-2">Projected to hit $32k by midnight</p>
-        </div>
-
-    </div>
+    <app-telemetry-cards 
+        [telemetry]="fleetService.telemetry()"
+        [surgeMultiplier]="surgeMultiplier()"
+        [surgeLabel]="surgeLabel()">
+    </app-telemetry-cards>
 
     <div class="mt-10 opacity-0 animate-fade-in-up" style="animation-delay: 0.6s;">
         <div class="bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
@@ -171,111 +45,22 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 matrix-grid">
-                
                 @if (fleetService.isLoading()) {
                     <div class="col-span-full py-12 flex justify-center text-indigo-400">
                         <i class="pi pi-spin pi-spinner text-4xl"></i>
                     </div>
                 } @else {
                     
-                    @for (car of fleetService.vehicles(); track car.carId) {
-                        
-                        <div (click)="handleCarClick(car)" 
-                             class="cyber-card rounded-xl p-6 relative overflow-hidden group cursor-pointer"
-                             [ngClass]="{
-                                 'bg-slate-950/40 border border-emerald-900/40 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]': car.status === 'AVAILABLE',
-                                 
-                                 'bg-slate-950/80 border border-rose-900/30 opacity-80 hover:border-rose-500/50 hover:shadow-[0_0_30px_rgba(225,29,72,0.2)]': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'SAFE',
-                                 
-                                 'bg-amber-950/20 border border-amber-500/50 hover:border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)]': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'DUE_TODAY',
-                                 
-                                 'bg-red-950/30 border border-red-500 hover:border-red-400 shadow-[0_0_25px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] animate-pulse': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'OVERDUE',
-
-                                 'bg-slate-950/80 border border-slate-800 opacity-50 cursor-not-allowed': car.status === 'MAINTENANCE'
-                             }">
-                            
-                            <div class="hidden group-hover:block absolute left-0 right-0 h-0.5 bg-white shadow-[0_0_15px_rgba(255,255,255,1)] z-20 animate-cyber-scan"
-                                 [ngClass]="{
-                                    'shadow-emerald-400': car.status === 'AVAILABLE',
-                                    'shadow-rose-400': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'SAFE',
-                                    'shadow-amber-400': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'DUE_TODAY',
-                                    'shadow-red-500': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'OVERDUE'
-                                 }"></div>
-
-                            @if (car.status === 'AVAILABLE') {
-                                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            }
-
-                            <div class="flex justify-between items-start mb-4 relative z-10">
-                                <span class="text-sm font-bold text-slate-400 tracking-wider">{{ car.carId }}</span>
-                                
-                                @if (car.status === 'AVAILABLE') {
-                                    <div class="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] uppercase font-bold rounded tracking-widest">Ready</div>
-                                } @else if (car.status === 'BOOKED') {
-                                    
-                                    @if (getBookingUrgency(car.carId) === 'SAFE') {
-                                        <div class="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] uppercase font-bold rounded tracking-widest flex items-center">
-                                            <i class="pi pi-lock text-[8px] mr-1"></i> Deployed
-                                        </div>
-                                    } @else if (getBookingUrgency(car.carId) === 'DUE_TODAY') {
-                                        <div class="px-2 py-1 bg-amber-500/20 border border-amber-500/50 text-amber-400 text-[10px] uppercase font-bold rounded tracking-widest flex items-center shadow-[0_0_10px_rgba(245,158,11,0.5)]">
-                                            <i class="pi pi-clock text-[8px] mr-1"></i> Due Today
-                                        </div>
-                                    } @else {
-                                        <div class="px-2 py-1 bg-red-600 border border-red-500 text-white text-[10px] uppercase font-bold rounded tracking-widest flex items-center animate-bounce shadow-[0_0_15px_rgba(220,38,38,0.8)]">
-                                            <i class="pi pi-exclamation-triangle text-[8px] mr-1"></i> Overdue
-                                        </div>
-                                    }
-
-                                }
-                            </div>
-                            
-                            <h4 class="text-2xl font-black mb-1 relative z-10 transition-colors duration-300" 
-                                [ngClass]="{
-                                    'text-white group-hover:text-emerald-300': car.status === 'AVAILABLE',
-                                    'text-slate-500 group-hover:text-rose-300': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'SAFE',
-                                    'text-amber-100 group-hover:text-amber-300': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'DUE_TODAY',
-                                    'text-red-100 group-hover:text-red-300': car.status === 'BOOKED' && getBookingUrgency(car.carId) === 'OVERDUE'
-                                }">
-                                {{ car.brand }} {{ car.model }}
-                            </h4>
-                            
-                            <p class="text-sm mb-6 relative z-10 font-medium" [ngClass]="car.status === 'AVAILABLE' ? 'text-slate-500' : 'text-slate-500'">
-                                {{ car.fuelType }} | {{ car.seatingCapacity }} Seats
-                            </p>
-                            
-                            <div class="flex justify-between items-end relative z-10">
-                                <span class="text-xl font-mono font-bold" [ngClass]="car.status === 'AVAILABLE' ? 'text-emerald-400' : 'text-slate-600'">
-                                    
-                                    @if (car.status === 'AVAILABLE' && surgeMultiplier() > 1.0) {
-                                        <span class="line-through text-slate-500/70 text-sm mr-2">${{ car.pricePerDay }}</span>
-                                        <span class="transition-all duration-300"
-                                              [ngClass]="surgeMultiplier() === 1.15 ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-fuchsia-400 animate-text-glow'">
-                                            ${{ car.pricePerDay * surgeMultiplier() | number:'1.0-0' }}
-                                        </span>
-                                    } @else {
-                                        ${{ car.pricePerDay }}
-                                    }
-
-                                    <span class="text-xs font-sans" [ngClass]="car.status === 'AVAILABLE' ? 'text-slate-500' : 'text-slate-600'">/day</span>
-                                </span>
-                                
-                                @if (car.status === 'AVAILABLE') {
-                                    <button class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300 transform group-hover:scale-110 shadow-[0_0_15px_rgba(16,185,129,0)] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-                                        <i class="pi pi-arrow-right font-bold"></i>
-                                    </button>
-                                } @else {
-                                    <i class="pi pi-ban text-2xl group-hover:scale-110 transition-transform" 
-                                       [ngClass]="{
-                                          'text-rose-500/30': getBookingUrgency(car.carId) === 'SAFE',
-                                          'text-amber-500/50': getBookingUrgency(car.carId) === 'DUE_TODAY',
-                                          'text-red-500/70': getBookingUrgency(car.carId) === 'OVERDUE'
-                                       }"></i>
-                                }
-                            </div>
-                        </div>
-
+                    @for (car of filteredVehicles(); track car.carId) {
+                        <app-vehicle-card 
+                            [car]="car" 
+                            [surgeMultiplier]="surgeMultiplier()"
+                            [urgency]="getBookingUrgency(car.carId)"
+                            [ngClass]="{'animate-target-lock': focusedCarId() === car.carId}"
+                            (clicked)="handleCarClick($event)">
+                        </app-vehicle-card>
                     }
+                    
                 }
             </div>
 
@@ -289,48 +74,81 @@
                     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} assets">
                 </p-paginator>
             </div>
-
         </div>
     </div>
 </div>
 
 <p-dialog [(visible)]="checkoutModalVisible" [modal]="true" appendTo="body" [style]="{ width: '550px' }" (onHide)="stopTimer()">
     <ng-template pTemplate="headless">
-        <div class="bg-slate-900 text-slate-200 rounded-2xl border border-slate-700 shadow-[0_30px_60px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col w-full">
-            <div class="p-6 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent"></div>
+        <div class="bg-slate-900 text-slate-200 rounded-2xl border border-slate-700 shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col w-full relative">
+            <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 20px 20px;"></div>
+            
+            <div class="p-6 border-b border-slate-800 bg-slate-950/80 flex justify-between items-center relative overflow-hidden backdrop-blur-md">
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-transparent"></div>
                 <div class="relative z-10">
-                    <h3 class="text-2xl font-black text-white tracking-tight">{{ selectedCar?.brand }} {{ selectedCar?.model }}</h3>
-                    <p class="text-emerald-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-check-circle mr-1"></i> Available for Dispatch</p>
+                    <h3 class="text-2xl font-black text-white tracking-tight drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{{ selectedCar?.brand }} {{ selectedCar?.model }}</h3>
+                    <p class="text-emerald-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-shield mr-1"></i> Asset Clearance Authorized</p>
                 </div>
-                <div class="relative z-10 bg-slate-900 border border-amber-500/30 px-4 py-2 rounded-lg flex items-center shadow-[0_0_15px_rgba(245,158,11,0.15)]" [ngClass]="{'border-rose-500 text-rose-500': holdTimeLeft < 60}">
+                <div class="relative z-10 bg-slate-900 border border-amber-500/50 px-4 py-2 rounded-lg flex items-center shadow-[0_0_15px_rgba(245,158,11,0.2)]" [ngClass]="{'border-rose-500 text-rose-500 shadow-[0_0_20px_rgba(225,29,72,0.4)]': holdTimeLeft < 60}">
                     <i class="pi pi-stopwatch mr-2" [ngClass]="holdTimeLeft < 60 ? 'text-rose-500 animate-ping' : 'text-amber-500 animate-pulse'"></i>
                     <span class="font-mono font-bold tracking-widest text-lg" [ngClass]="holdTimeLeft < 60 ? 'text-rose-400' : 'text-amber-400'">{{ displayTime }}</span>
                 </div>
             </div>
-            <form [formGroup]="checkoutForm" class="p-8 space-y-6 bg-[#020617]">
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Start Date</label><input type="date" formControlName="startDate" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm [color-scheme:dark]"></div>
-                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">End Date</label><input type="date" formControlName="endDate" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm [color-scheme:dark]"></div>
+            
+            <form [formGroup]="checkoutForm" class="p-8 space-y-6 bg-[#020617] relative z-10 max-h-[60vh] overflow-y-auto cyber-scrollbar">
+                
+                <div class="space-y-2 mb-6 opacity-0 animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 flex items-center">
+                        <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2 animate-pulse"></div> Assign Authorization Profile
+                    </label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-fuchsia-400">
+                            <i class="pi pi-id-card text-slate-500 group-focus-within:text-fuchsia-400 transition-colors"></i>
+                        </div>
+                        <select formControlName="customerId" 
+                                class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pl-10 pr-4 py-3 text-slate-200 focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all duration-300 text-sm appearance-none cursor-pointer focus:shadow-[0_0_15px_rgba(217,70,239,0.3)]" 
+                                [ngClass]="{'border-rose-500/50 shadow-[0_0_10px_rgba(225,29,72,0.2)]': checkoutForm.get('customerId')?.invalid && checkoutForm.get('customerId')?.touched}">
+                            <option value="" disabled selected>-- Scan Database for Client ID --</option>
+                            @for (client of customers(); track client.customerId) {
+                                <option [value]="client.customerId" class="bg-slate-900 text-white">{{ client.customerId }} - {{ client.customerName }}</option>
+                            }
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <i class="pi pi-angle-down text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
                 </div>
-                <label class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/50 transition-colors cursor-pointer group">
-                    <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors"><i class="pi pi-user font-bold"></i></div><div><p class="font-bold text-slate-200">Include Chauffeur</p><p class="text-xs text-slate-500">+$50.00 / day</p></div></div>
+
+                <div class="grid grid-cols-2 gap-6 opacity-0 animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Deployment Date</label><input type="date" formControlName="startDate" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm [color-scheme:dark]"></div>
+                    <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Return Objective</label><input type="date" formControlName="endDate" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm [color-scheme:dark]"></div>
+                </div>
+                
+                <label class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 transition-colors cursor-pointer group opacity-0 animate-fade-in-up" style="animation-delay: 0.3s;">
+                    <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors group-hover:shadow-[0_0_15px_rgba(99,102,241,0.5)]"><i class="pi pi-user font-bold"></i></div><div><p class="font-bold text-slate-200">Dispatch Chauffeur</p><p class="text-xs text-slate-500">+$50.00 / day</p></div></div>
                     <input type="checkbox" formControlName="withDriver" class="w-5 h-5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 bg-slate-950 cursor-pointer">
                 </label>
                 
-                <div class="bg-slate-950/50 rounded-xl p-6 border border-slate-800 space-y-4">
-                    <div class="flex items-center justify-between text-sm text-slate-400">
+                <div class="bg-slate-950/80 rounded-xl p-6 border border-emerald-900/30 space-y-4 opacity-0 animate-fade-in-up relative overflow-hidden" style="animation-delay: 0.4s;">
+                    <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none"></div>
+                    <div class="flex items-center justify-between text-sm text-slate-400 relative z-10">
                         <span>Duration ({{ daysRequested }} Days @ ${{ selectedCar?.pricePerDay * surgeMultiplier() | number:'1.0-0' }}/day)</span>
                         <span class="font-mono text-slate-200">${{ (selectedCar?.pricePerDay * surgeMultiplier() * daysRequested) | number:'1.2-2' }}</span>
                     </div>
-                    @if (checkoutForm.value.withDriver) { <div class="flex items-center justify-between text-sm text-indigo-400 animate-fade-in-up"><span>Chauffeur Fee</span><span class="font-mono">+${{ (DRIVER_FEE_PER_DAY * daysRequested) | number:'1.2-2' }}</span></div> }
-                    <div class="flex items-center justify-between text-sm text-slate-400"><span>Standard Deposit</span><span class="font-mono text-slate-200">${{ SECURITY_DEPOSIT | number:'1.2-2' }}</span></div>
-                    <div class="border-t border-slate-800 pt-4 flex items-center justify-between"><span class="text-sm font-bold text-slate-300 uppercase tracking-widest">Total Authorized</span><span class="text-3xl font-black text-emerald-400 font-mono drop-shadow-[0_0_10px_rgba(52,211,153,0.3)] transition-all">${{ (dynamicTotal + SECURITY_DEPOSIT) | number:'1.2-2' }}</span></div>
+                    @if (checkoutForm.value.withDriver) { <div class="flex items-center justify-between text-sm text-indigo-400 animate-fade-in-up relative z-10"><span>Chauffeur Rate Applied</span><span class="font-mono">+${{ (DRIVER_FEE_PER_DAY * daysRequested) | number:'1.2-2' }}</span></div> }
+                    <div class="flex items-center justify-between text-sm text-slate-400 relative z-10"><span>Standard Security Deposit</span><span class="font-mono text-slate-200">${{ SECURITY_DEPOSIT | number:'1.2-2' }}</span></div>
+                    <div class="border-t border-slate-800 pt-4 flex items-center justify-between relative z-10"><span class="text-sm font-bold text-slate-300 uppercase tracking-widest">Authorization Hold</span><span class="text-3xl font-black text-emerald-400 font-mono drop-shadow-[0_0_15px_rgba(52,211,153,0.5)] transition-all">${{ (dynamicTotal + SECURITY_DEPOSIT) | number:'1.2-2' }}</span></div>
                 </div>
             </form>
-            <div class="p-6 bg-slate-950/80 border-t border-slate-800 flex space-x-4">
-                <button (click)="closeCheckoutModal()" class="flex-1 py-3 px-4 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">Cancel</button>
-                <button (click)="executeTransaction()" [disabled]="isProcessing || checkoutForm.invalid" class="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all font-bold tracking-wide flex justify-center items-center group disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden relative">@if (!isProcessing) { <span class="flex items-center">Authorize Hold <i class="pi pi-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span> } @else { <span class="flex items-center text-emerald-50"><i class="pi pi-spinner animate-spin text-xl mr-2"></i> Encrypting...</span> }</button>
+            <div class="p-6 bg-slate-950/90 border-t border-slate-800 flex space-x-4 relative z-10 backdrop-blur-md">
+                <button (click)="closeCheckoutModal()" class="flex-1 py-3 px-4 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-all font-medium">Abort</button>
+                <button (click)="executeTransaction()" [disabled]="isProcessing || checkoutForm.invalid" class="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] transition-all font-bold tracking-wide flex justify-center items-center group disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden relative">
+                    @if (!isProcessing) { 
+                        <span class="flex items-center">Execute Encrypted Hold <i class="pi pi-lock ml-2 group-hover:scale-110 transition-transform"></i></span> 
+                    } @else { 
+                        <span class="flex items-center text-emerald-50"><i class="pi pi-spinner animate-spin text-xl mr-2"></i> Handshaking Backend...</span> 
+                    }
+                </button>
             </div>
         </div>
     </ng-template>
@@ -343,7 +161,7 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent"></div>
                 <div class="relative z-10"><h3 class="text-2xl font-black text-white tracking-tight">Register New Asset</h3><p class="text-indigo-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-server mr-1"></i> Add vehicle to global fleet</p></div>
             </div>
-            <form [formGroup]="carForm" (ngSubmit)="submitNewCar()" class="p-8 space-y-6 bg-[#020617]">
+            <form [formGroup]="carForm" (ngSubmit)="submitNewCar()" class="p-8 space-y-6 bg-[#020617] max-h-[60vh] overflow-y-auto cyber-scrollbar">
                 <div class="grid grid-cols-2 gap-6">
                     <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Brand</label><input type="text" formControlName="brand" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600 text-sm" placeholder="e.g. Porsche"></div>
                     <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Model</label><input type="text" formControlName="model" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-600 text-sm" placeholder="e.g. 911 GT3"></div>
@@ -367,7 +185,7 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-rose-500/10 to-transparent"></div>
                 <div class="relative z-10"><h3 class="text-2xl font-black text-white tracking-tight">{{ selectedCar?.brand }} {{ selectedCar?.model }}</h3><p class="text-rose-400 text-sm font-medium flex items-center mt-1"><i class="pi pi-search mr-1"></i> Post-Rental Inspection</p></div>
             </div>
-            <form [formGroup]="returnForm" class="p-8 space-y-6 bg-[#020617]">
+            <form [formGroup]="returnForm" class="p-8 space-y-6 bg-[#020617] max-h-[60vh] overflow-y-auto cyber-scrollbar">
                 <div class="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex items-start space-x-3 mb-6"><i class="pi pi-exclamation-triangle text-amber-500 mt-0.5"></i><p class="text-xs text-amber-400/80 font-medium">Verify asset condition before capturing final payment. Any added penalties will be deducted from the customer's $500.00 security deposit.</p></div>
                 <div class="grid grid-cols-2 gap-6">
                     <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 text-rose-400">Late Fees ($)</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span><input type="number" formControlName="lateFees" class="w-full bg-slate-950/80 border border-rose-900/50 rounded-xl pl-8 pr-4 py-3 text-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all font-mono text-sm"></div></div>

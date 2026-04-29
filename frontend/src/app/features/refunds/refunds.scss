@@ -1,0 +1,102 @@
+/* SCOPED REFUND ANIMATIONS */
+
+/* Secure Terminal Decryption Glow */
+@keyframes terminal-decrypt {
+    0%, 100% { box-shadow: inset 0 0 10px rgba(225, 29, 72, 0.1); border-color: rgba(225, 29, 72, 0.3); }
+    50% { box-shadow: inset 0 0 40px rgba(225, 29, 72, 0.5); border-color: rgba(225, 29, 72, 0.9); }
+}
+.animate-terminal-decrypt { animation: terminal-decrypt 1.5s ease-in-out infinite; }
+
+/* Red Laser Scan for overriding financial ledgers */
+@keyframes security-scan-red {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+.animate-security-scan-red { animation: security-scan-red 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+/* Stamp Effect for "REFUNDED" status */
+@keyframes stamp-down {
+    0% { transform: scale(3) rotate(-15deg); opacity: 0; }
+    50% { transform: scale(0.9) rotate(-5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(-10deg); opacity: 1; filter: drop-shadow(0 0 10px rgba(225,29,72,0.8)); }
+}
+.animate-stamp { animation: stamp-down 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+/* Cascading Secure Row Materialization */
+@keyframes secure-row-enter {
+    0% { opacity: 0; transform: translateX(-20px); filter: drop-shadow(0 0 10px rgba(225,29,72,0.8)); }
+    100% { opacity: 1; transform: translateX(0); filter: drop-shadow(0 0 0 transparent); }
+}
+.animate-secure-row {
+    animation: secure-row-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    opacity: 0; 
+}
+
+/* Red Holographic Data Stream Loader */
+@keyframes red-data-stream {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+.skeleton-stream-red {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(225, 29, 72, 0.1); 
+}
+.skeleton-stream-red::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(225, 29, 72, 0.3), transparent);
+    animation: red-data-stream 1.5s infinite linear;
+}
+
+.cyber-table-row { transition: all 0.3s ease; }
+.cyber-table-row:hover { background-color: rgba(225, 29, 72, 0.05); transform: translateX(4px); }
+
+/* Glitch effect for the Decrypting text */
+@keyframes glitch {
+    0%, 100% { transform: translate(0); }
+    20% { transform: translate(-2px, 1px); }
+    40% { transform: translate(-1px, -1px); }
+    60% { transform: translate(2px, 1px); }
+    80% { transform: translate(1px, -1px); }
+}
+.animate-glitch { animation: glitch 0.2s linear infinite; }
+
+/* ==================================================================== */
+/* FUN TERMINAL OVERRIDE ANIMATIONS                                     */
+/* ==================================================================== */
+
+/* Spinning Gears */
+@keyframes gear-spin { 100% { transform: rotate(360deg); } }
+@keyframes gear-spin-reverse { 100% { transform: rotate(-360deg); } }
+
+.animate-gear { animation: gear-spin 3s linear infinite; }
+.animate-gear-reverse { animation: gear-spin-reverse 4s linear infinite; }
+
+/* Barcode Scanner */
+@keyframes barcode-scan {
+    0% { transform: translateY(-100%); }
+    50% { transform: translateY(100%); }
+    100% { transform: translateY(-100%); }
+}
+.animate-barcode { animation: barcode-scan 2s ease-in-out infinite; }
+
+/* Blinking Hex Data */
+@keyframes data-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+.animate-data-blink { animation: data-blink 0.5s steps(2) infinite; }
+
+/* Horizontal Red Laser for Search Bar */
+@keyframes red-laser-scan {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+.animate-red-laser {
+    animation: red-laser-scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

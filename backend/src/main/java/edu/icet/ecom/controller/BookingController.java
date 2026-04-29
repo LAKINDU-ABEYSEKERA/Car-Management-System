@@ -23,7 +23,7 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping("/createBooking")
     public ResponseEntity<StandardResponse> createBooking(@Valid @RequestBody BookingDTO request) {
         BookingDTO savedBooking = bookingService.createBooking(request);
@@ -34,7 +34,7 @@ public class BookingController {
     }
 
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/returnCar/{bookingId}")
     public ResponseEntity<StandardResponse> returnCar(
             @PathVariable String bookingId,

@@ -1,7 +1,7 @@
 package edu.icet.ecom.controller;
 
 import edu.icet.ecom.model.dto.CustomerDTO;
-import edu.icet.ecom.model.entity.Customer;
+import edu.icet.ecom.model.dto.PaginatedResponse;
 import edu.icet.ecom.service.CustomerService;
 import edu.icet.ecom.util.StandardResponse;
 import jakarta.validation.Valid;
@@ -13,80 +13,127 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
-@RequiredArgsConstructor
-@RequestMapping("/customer")
 @RestController
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
+@RequestMapping("/customers")
 public class CustomerController {
+
     private final CustomerService customerService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    // =========================================================
+    // CREATE
+    // =========================================================
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PostMapping("/addCustomer")
+    public ResponseEntity<StandardResponse> createCustomer(
+            @Valid @RequestBody CustomerDTO dto) {
+
+        log.info("Creating customer: {}", dto.getCustomerName());
+
+        CustomerDTO saved = customerService.addCustomer(dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new StandardResponse(
+                        201,
+                        "Customer created successfully",
+                        saved
+                ));
+    }
+
+    // =========================================================
+    // READ ONE
+    // =========================================================
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/getCustomer/{id}")
-    public ResponseEntity<?> getCustomer(@PathVariable String id) {
-//        return customerService.getCustomer(id);
+    public ResponseEntity<StandardResponse> getCustomer(@PathVariable String id) {
 
         log.info("Fetching customer with ID: {}", id);
-        CustomerDTO customerDTO = customerService.getCustomer(id);
 
-        if (customerDTO == null) {
-            //return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-            throw new RuntimeException("Customer not found with ID: " + id);
-        }
+        CustomerDTO customer = customerService.getCustomer(id);
 
-        return new ResponseEntity<>(
-                new StandardResponse(200, "Customer retrieved successfully", customerDTO),
-                HttpStatus.OK
+        return ResponseEntity.ok(
+                new StandardResponse(
+                        200,
+                        "Customer retrieved successfully",
+                        customer
+                )
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    @PostMapping("/putCustomer")
-    public ResponseEntity<StandardResponse> putCustomer(@Valid @RequestBody CustomerDTO customerDTO){
-        log.info("Creating new customer: {}", customerDTO.getCustomerName());
+    // =========================================================
+    // READ ALL (PAGINATION & SEARCH)
+    // =========================================================
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @GetMapping("/getAllCustomers")
+    public ResponseEntity<StandardResponse> getAllCustomers(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "search", defaultValue = "") String search) { // <-- Explicit names added!
 
-        CustomerDTO savedCustomer = customerService.putCustomer(customerDTO);
+        PaginatedResponse<CustomerDTO> response = customerService.getAllCustomers(page, size, search);
 
-       // return ResponseEntity.status(HttpStatus.CREATED).body(savedCustomer);
-        //what if the customer doesnot exists
-        return new ResponseEntity<>(
-                new StandardResponse(201,"Customer created successfully", savedCustomer),
-                HttpStatus.CREATED
+        return ResponseEntity.ok(new StandardResponse(200, "Success", response));
+    }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PutMapping("/updateCustomer/{id}")
+    public ResponseEntity<StandardResponse> updateCustomer(
+            @PathVariable String id,
+            @Valid @RequestBody CustomerDTO dto) {
+
+        log.info("Updating customer with ID: {}", id);
+
+        dto.setCustomerId(id);
+        CustomerDTO updated = customerService.updateCustomer(dto);
+
+        return ResponseEntity.ok(
+                new StandardResponse(
+                        200,
+                        "Customer updated successfully",
+                        updated
+                )
         );
     }
 
-    @PutMapping("/updateCustomer")
-    public ResponseEntity<StandardResponse> updateCustomer(@Valid @RequestBody CustomerDTO customerDTO){
-        log.info("Updating customer ID: {}", customerDTO.getCustomerId());
-        CustomerDTO updatedCus = customerService.updateCustomer(customerDTO);
+    // =========================================================
+    // DELETE
+    // =========================================================
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/deleteCustomer/{id}")
+    public ResponseEntity<StandardResponse> deleteCustomer(@PathVariable String id) {
 
-        return new  ResponseEntity<>(
-                new StandardResponse(200, "Customer updated successfully",updatedCus),
-                HttpStatus.OK
-                );
+        log.warn("Deleting customer with ID: {}", id);
 
+        CustomerDTO deleted = customerService.deleteCustomer(id);
+
+        return ResponseEntity.ok(
+                new StandardResponse(
+                        200,
+                        "Customer deleted successfully",
+                        deleted.getCustomerId()
+                )
+        );
     }
 
-    //why not add @valid to delete
-    @DeleteMapping("deleteCustomer/{id}")
-    public ResponseEntity<StandardResponse> deleteCustomer(@PathVariable String id){
-//        try {
-            log.info("Attempting to delete customer ID: {}", id);
-            CustomerDTO customerDTO = customerService.deleteCustomer(id);
+    // =========================================================
+    // ANALYTICS
+    // =========================================================
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/insights")
+    public ResponseEntity<StandardResponse> getCustomerInsights() {
 
-            if (customerDTO == null) {
-                throw new RuntimeException("Can not delete. Customer notfound with ID: " + id);
-            }
+        log.info("Fetching customer insights");
 
-            return new ResponseEntity<>(
-                    new StandardResponse(200, "Customer deleted successfully", customerDTO.getCustomerId()),
-                    HttpStatus.OK
+        return ResponseEntity.ok(
+                new StandardResponse(
+                        200,
+                        "Customer insights generated successfully",
+                        customerService.getCustomerInsights()
+                )
         );
-//            if (customerDTO != null) {
-               // return ResponseEntity.status(HttpStatus.OK).body("Customer deleted successfully: " + customerDTO.getCustomerName());
-//            } else {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-//            }
-//        } catch (Exception e){
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid ID format");
-//        }
     }
 }

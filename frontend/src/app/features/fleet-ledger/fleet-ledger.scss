@@ -1,0 +1,46 @@
+/* ==================================================================== */
+/* LEDGER SPECIFIC CYBER ANIMATIONS                                     */
+/* ==================================================================== */
+
+/* Cascading Row Materialization */
+@keyframes ledger-row-enter {
+    0% { opacity: 0; transform: translateX(-30px) scale(0.98); filter: blur(4px); }
+    100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+}
+
+.animate-ledger-row {
+    animation: ledger-row-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    opacity: 0; /* Stays hidden until animation fires */
+}
+
+/* Holographic Data Stream Loader */
+@keyframes data-stream {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.skeleton-stream {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(30, 41, 59, 0.5); /* Slate 800 */
+}
+
+.skeleton-stream::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+    animation: data-stream 1.5s infinite linear;
+}
+
+/* Hover glow for rows */
+.ledger-row {
+    transition: all 0.3s ease;
+}
+.ledger-row:hover {
+    background-color: rgba(30, 41, 59, 0.8);
+    box-shadow: inset 4px 0 0 0 #6366f1; /* Indigo left border on hover */
+}

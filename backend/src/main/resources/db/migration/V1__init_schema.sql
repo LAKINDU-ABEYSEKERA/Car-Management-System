@@ -82,3 +82,14 @@ CREATE TABLE payment (
         last_modified_date DATETIME,
     CONSTRAINT fk_payment_booking FOREIGN KEY (booking_id) REFERENCES booking(booking_id)
 );
+
+
+CREATE TABLE system_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_id VARCHAR(50) NOT NULL,
+    timestamp DATETIME NOT NULL,
+    log_level VARCHAR(20) NOT NULL,
+    service VARCHAR(100),
+    message TEXT NOT NULL,
+    username VARCHAR(100)
+);
